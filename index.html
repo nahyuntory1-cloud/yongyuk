@@ -229,8 +229,8 @@ const D = {
   은행: '00은행',
   사업자번호: '1234567890',
   계좌: '000-000000-00-000',
-  계약금액: 52,345,600,
-  보증금액: 523,4560,
+  계약금액: 52345600,
+  보증금액: 5234560,
   계약일: '2020-10-10',
   착수일: '2020-10-10',
   준공기한: '2020-10-20',
@@ -355,19 +355,13 @@ function showPage(id) {
   document.getElementById('page-title').textContent = p.title;
   document.getElementById('content').innerHTML = p.render();
   if (id !== 'input') {
-    // 편집 가능한 요소에 직접 contenteditable 적용 (테이블 셀, 단락, 서명란 등)
     document.querySelectorAll(
       '#content td:not(.label-cell), #content p, #content .doc-body, #content .num-item, #content .sign-area, #content .sign-line, #content .doc-title'
     ).forEach(el => {
-      if (el.tagName === 'TD' || el.tagName === 'P' || el.classList.contains('doc-body') ||
-          el.classList.contains('num-item') || el.classList.contains('sign-area') ||
-          el.classList.contains('sign-line') || el.classList.contains('doc-title')) {
-        el.contentEditable = 'true';
-        el.spellcheck = false;
-        el.classList.add('editable');
-      }
+      el.contentEditable = 'true';
+      el.spellcheck = false;
+      el.classList.add('editable');
     });
-    // 체크박스, 도장 박스는 편집 불가
     document.querySelectorAll('.cb-opt, .seal-box, .cb-group').forEach(el => {
       el.contentEditable = 'false';
       el.classList.remove('editable');
