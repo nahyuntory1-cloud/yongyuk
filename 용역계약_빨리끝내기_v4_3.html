@@ -1,0 +1,2266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>용역 계약 빨리 끝내기</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: '맑은 고딕', 'Malgun Gothic', sans-serif; font-size: 13px; background: #f0f4f8; }
+
+  /* ===== LAYOUT ===== */
+  #app { display: flex; height: 100vh; }
+  #sidebar {
+    width: 220px; min-width: 220px; background: #1e3a5f; color: #fff;
+    display: flex; flex-direction: column; overflow-y: auto;
+  }
+  #sidebar h1 { font-size: 13px; padding: 16px 14px 12px; border-bottom: 1px solid #2e5080; line-height: 1.5; }
+  #sidebar h1 span { display: block; font-size: 10px; opacity: .6; margin-top: 2px; }
+  .menu-group { padding: 8px 0; border-bottom: 1px solid #2e5080; }
+  .menu-group-label { font-size: 10px; opacity: .5; padding: 4px 14px 2px; text-transform: uppercase; letter-spacing: .5px; }
+  .menu-item {
+    display: block; padding: 7px 14px; cursor: pointer; font-size: 12px;
+    border: none; background: none; color: #cde; text-align: left; width: 100%;
+    transition: background .15s;
+  }
+  .menu-item:hover { background: #2e5080; }
+  .menu-item.active { background: #2563eb; color: #fff; font-weight: 600; }
+  #main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+  #toolbar {
+    background: #fff; border-bottom: 1px solid #dde; padding: 10px 20px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  #toolbar h2 { font-size: 15px; flex: 1; }
+  .btn {
+    padding: 6px 14px; border-radius: 5px; border: 1px solid #c0cfe0;
+    background: #fff; cursor: pointer; font-size: 12px; font-family: inherit;
+    transition: background .15s;
+  }
+  .btn:hover { background: #f0f4f8; }
+  .btn-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .btn-primary:hover { background: #1d4ed8; }
+  #content { padding: 24px; flex: 1; }
+
+  /* ===== DATA INPUT FORM ===== */
+  .input-section { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .input-section h3 { font-size: 13px; color: #1e3a5f; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #e8f0fe; }
+  .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; }
+  .input-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11px; color: #555; font-weight: 600; }
+  .field input, .field select {
+    padding: 7px 9px; border: 1px solid #c8d8e8; border-radius: 4px;
+    font-size: 13px; font-family: inherit; background: #f8fbff;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: #2563eb; background: #fff; }
+  .field.highlight input { background: #fffde7; border-color: #f9a825; }
+
+  /* ===== DOCUMENT VIEW ===== */
+  .doc-wrap { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); padding: 8px; }
+  .doc-page {
+    width: 794px; min-height: 1123px; margin: 0 auto; padding: 60px 70px;
+    font-family: '바탕', 'Batang', '굴림', serif; font-size: 11pt;
+    line-height: 1.7; background: #fff; position: relative;
+  }
+  .doc-title {
+    text-align: center; font-size: 18pt; font-weight: bold;
+    letter-spacing: 6px; margin-bottom: 30px; font-family: '바탕', serif;
+  }
+  .doc-subtitle { text-align: center; font-size: 13pt; margin-bottom: 20px; }
+  table.doc-table {
+    width: 100%; border-collapse: collapse; margin-bottom: 12px;
+  }
+  table.doc-table td, table.doc-table th {
+    border: 1px solid #333; padding: 5px 8px; vertical-align: middle;
+    font-size: 10.5pt;
+  }
+  table.doc-table th { background: #f5f5f5; text-align: center; font-weight: bold; }
+  .label-cell { background: #f9f9f9; text-align: center; font-weight: bold; white-space: nowrap; }
+  .sign-area { text-align: right; margin-top: 30px; line-height: 2.2; }
+  .sign-line { display: inline-block; min-width: 120px; border-bottom: 1px solid #333; margin-left: 8px; }
+  .doc-body { text-indent: 0; margin-bottom: 10px; }
+  .doc-indent { margin-left: 20px; }
+  .num-item { margin-bottom: 6px; }
+  .seal-box {
+    display: inline-block; width: 60px; height: 60px; border: 1px solid #aaa;
+    text-align: center; line-height: 60px; font-size: 9pt; color: #aaa;
+    vertical-align: middle; margin-left: 8px;
+  }
+  .right-align { text-align: right; }
+  .center { text-align: center; }
+  .bold { font-weight: bold; }
+  .underline { text-decoration: underline; }
+  .mt10 { margin-top: 10px; }
+  .mt20 { margin-top: 20px; }
+  .mt30 { margin-top: 30px; }
+  .mb10 { margin-bottom: 10px; }
+  .small { font-size: 9pt; }
+
+  /* ===== EDITABLE DOC ===== */
+  td.editable:hover, p.editable:hover, div.editable:hover, span.editable:hover {
+    background: #fffde7; cursor: text;
+  }
+  td.editable:focus, p.editable:focus, div.editable:focus, span.editable:focus {
+    outline: 2px solid #2563eb; background: #eff6ff;
+  }
+  .editable { outline: none; }
+
+  /* ===== 인터랙티브 체크박스 ===== */
+  .cb-group { display: inline-flex; flex-direction: column; gap: 3px; }
+  .cb-opt {
+    cursor: pointer; white-space: nowrap; font-size: 10.5pt;
+    padding: 1px 4px; border-radius: 3px; transition: background .1s;
+    user-select: none;
+  }
+  .cb-opt:hover { background: #fffde7; }
+  .cb-opt.cb-checked { font-weight: 700; color: #000; }
+  /* 선택되면 선택 안 된 항목 숨김 */
+  .cb-has-check .cb-opt:not(.cb-checked) { display: none; }
+  @media print {
+    .cb-opt:not(.cb-checked) { display: none !important; }
+  }
+
+  /* ===== PRINT ===== */
+  @media print {
+    #sidebar, #toolbar { display: none !important; }
+    #app { display: block; }
+    #main { overflow: visible; }
+    #content { padding: 0; }
+    .doc-wrap { box-shadow: none; padding: 0; border-radius: 0; }
+    .doc-page {
+      width: 210mm !important;
+      padding: 15mm 18mm !important;
+      min-height: auto !important;
+      max-height: 277mm !important;
+      overflow: hidden;
+      page-break-after: always;
+      break-after: page;
+      transform-origin: top left;
+    }
+    .doc-page.multi { max-height: none !important; overflow: visible; }
+    .doc-wrap + .doc-wrap { margin-top: 0 !important; }
+    .no-print { display: none !important; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <h1>용역 계약 빨리 끝내기<span>자동 서식 생성 프로그램</span></h1>
+    <div class="menu-group">
+      <button class="menu-item active" onclick="showPage('input')">📋 데이터 입력</button>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-label">계약 서류</div>
+      <button class="menu-item" onclick="showPage('integrated')">계약이행 통합 서약서</button>
+      <button class="menu-item" onclick="showPage('contract')">용역표준계약서</button>
+      <button class="menu-item" onclick="showPage('accounting')">관련 회계예규 적용</button>
+      <button class="menu-item" onclick="showPage('acceptance')">승낙사항</button>
+      <button class="menu-item" onclick="showPage('seal')">사용인감계</button>
+      <button class="menu-item" onclick="showPage('bond')">계약보증금납부서</button>
+      <button class="menu-item" onclick="showPage('bond_confirm')">계약보증금 지급확약서</button>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-label">서약 서류</div>
+      <button class="menu-item" onclick="showPage('integrity')">청렴서약서</button>
+      <button class="menu-item" onclick="showPage('contract_memo')">수의계약 각서</button>
+      <button class="menu-item" onclick="showPage('contract_check')">수의계약 체결 제한 여부</button>
+      <button class="menu-item" onclick="showPage('tax')">조세포탈 관련 각서</button>
+      <button class="menu-item" onclick="showPage('privacy')">개인정보보안서약서</button>
+      <button class="menu-item" onclick="showPage('labor')">근로자 권리보호 이행서약서</button>
+      <button class="menu-item" onclick="showPage('security_rep')">보안서약서(업체대표)</button>
+      <button class="menu-item" onclick="showPage('security_staff')">보안서약서(참여인력)</button>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-label">이행 서류</div>
+      <button class="menu-item" onclick="showPage('start')">착수계</button>
+      <button class="menu-item" onclick="showPage('labor_agree')">노무비구분·지급합의서</button>
+      <button class="menu-item" onclick="showPage('labor_exclude')">노무비구분·지급제외확인서</button>
+      <button class="menu-item" onclick="showPage('labor_mgmt')">노무비구분관리제외확인서</button>
+      <button class="menu-item" onclick="showPage('labor_pay')">노무비지급내역서</button>
+      <button class="menu-item" onclick="showPage('security_end')">보안확약서(사업종료시)</button>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-label" style="color:#fbbf24;">⚠ 중대재해 안전서류</div>
+      <button class="menu-item" onclick="showPage('safe_plan')">1. 안전보건관리계획서</button>
+      <button class="menu-item" onclick="showPage('safe_eval')">2. 수급인 안전보건 수준평가표</button>
+      <button class="menu-item" onclick="showPage('safe_meeting')">3. 안전보건협의체 회의록</button>
+      <button class="menu-item" onclick="showPage('safe_check')">4. 도급(용역)안전보건 점검표</button>
+      <button class="menu-item" onclick="showPage('safe_high')">5. 점검표(고소작업)</button>
+      <button class="menu-item" onclick="showPage('safe_fire')">6. 점검표(화기작업)</button>
+      <button class="menu-item" onclick="showPage('safe_confined')">7. 점검표(밀폐공간작업)</button>
+      <button class="menu-item" onclick="showPage('safe_elec')">8. 점검표(전기작업)</button>
+      <button class="menu-item" onclick="showPage('safe_patrol')">9. 작업장 순회점검표</button>
+      <button class="menu-item" onclick="showPage('safe_joint')">10. 합동 안전보건점검표</button>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-label">완료 서류</div>
+      <button class="menu-item" onclick="showPage('complete')">완수확인서</button>
+      <button class="menu-item" onclick="showPage('payment')">대금청구서</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div id="toolbar">
+      <h2 id="page-title">데이터 입력</h2>
+      <span id="edit-badge" class="no-print" style="display:none; background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; border-radius:4px; padding:3px 10px; font-size:11px; font-weight:600;">✏ 클릭하여 직접 수정 가능</span>
+      <button id="hwpx-btn" class="btn btn-primary no-print" onclick="downloadHwpx()" style="display:none;">📥 한글(HWPX) 저장</button>
+      <button class="btn no-print" onclick="window.print()">🖨 인쇄</button>
+    </div>
+    <div id="content"></div>
+  </div>
+</div>
+
+<script type="text/plain" id="hwpx-header-tpl"><?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hh:head xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hp10="http://www.hancom.co.kr/hwpml/2016/paragraph" xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hhs="http://www.hancom.co.kr/hwpml/2011/history" xmlns:hm="http://www.hancom.co.kr/hwpml/2011/master-page" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf/" xmlns:ooxmlchart="http://www.hancom.co.kr/hwpml/2016/ooxmlchart" xmlns:hwpunitchar="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0" version="1.5" secCnt="1"><hh:beginNum page="1" footnote="1" endnote="1" pic="1" tbl="1" equation="1"/><hh:refList><hh:fontfaces itemCnt="7"><hh:fontface lang="HANGUL" fontCnt="2"><hh:font id="0" face="함초롬돋움" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font><hh:font id="1" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="LATIN" fontCnt="2"><hh:font id="0" face="함초롬돋움" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font><hh:font id="1" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="HANJA" fontCnt="2"><hh:font id="0" face="함초롬돋움" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font><hh:font id="1" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="JAPANESE" fontCnt="2"><hh:font id="0" face="함초롬돋움" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font><hh:font id="1" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="OTHER" fontCnt="2"><hh:font id="0" face="함초롬돋움" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font><hh:font id="1" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="SYMBOL" fontCnt="2"><hh:font id="0" face="함초롬돋움" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font><hh:font id="1" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="USER" fontCnt="2"><hh:font id="0" face="함초롬돋움" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font><hh:font id="1" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface></hh:fontfaces><hh:borderFills itemCnt="2"><hh:borderFill id="1" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/><hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/><hh:topBorder type="NONE" width="0.1 mm" color="#000000"/><hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/><hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/></hh:borderFill><hh:borderFill id="2" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/><hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/><hh:topBorder type="NONE" width="0.1 mm" color="#000000"/><hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/><hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/><hc:fillBrush><hc:winBrush faceColor="none" hatchColor="#999999" alpha="0"/></hc:fillBrush></hh:borderFill></hh:borderFills><hh:charProperties itemCnt="7"><hh:charPr id="0" height="1000" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="1" latin="1" hanja="1" japanese="1" other="1" symbol="1" user="1"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:underline type="NONE" shape="SOLID" color="#000000"/><hh:strikeout shape="NONE" color="#000000"/><hh:outline type="NONE"/><hh:shadow type="NONE" color="#C0C0C0" offsetX="10" offsetY="10"/></hh:charPr><hh:charPr id="1" height="1000" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:underline type="NONE" shape="SOLID" color="#000000"/><hh:strikeout shape="NONE" color="#000000"/><hh:outline type="NONE"/><hh:shadow type="NONE" color="#C0C0C0" offsetX="10" offsetY="10"/></hh:charPr><hh:charPr id="2" height="900" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:underline type="NONE" shape="SOLID" color="#000000"/><hh:strikeout shape="NONE" color="#000000"/><hh:outline type="NONE"/><hh:shadow type="NONE" color="#C0C0C0" offsetX="10" offsetY="10"/></hh:charPr><hh:charPr id="3" height="900" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="1" latin="1" hanja="1" japanese="1" other="1" symbol="1" user="1"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:underline type="NONE" shape="SOLID" color="#000000"/><hh:strikeout shape="NONE" color="#000000"/><hh:outline type="NONE"/><hh:shadow type="NONE" color="#C0C0C0" offsetX="10" offsetY="10"/></hh:charPr><hh:charPr id="4" height="900" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="-5" latin="-5" hanja="-5" japanese="-5" other="-5" symbol="-5" user="-5"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:underline type="NONE" shape="SOLID" color="#000000"/><hh:strikeout shape="NONE" color="#000000"/><hh:outline type="NONE"/><hh:shadow type="NONE" color="#C0C0C0" offsetX="10" offsetY="10"/></hh:charPr><hh:charPr id="5" height="1600" textColor="#2E74B5" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:underline type="NONE" shape="SOLID" color="#000000"/><hh:strikeout shape="NONE" color="#000000"/><hh:outline type="NONE"/><hh:shadow type="NONE" color="#C0C0C0" offsetX="10" offsetY="10"/></hh:charPr><hh:charPr id="6" height="1100" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:underline type="NONE" shape="SOLID" color="#000000"/><hh:strikeout shape="NONE" color="#000000"/><hh:outline type="NONE"/><hh:shadow type="NONE" color="#C0C0C0" offsetX="10" offsetY="10"/></hh:charPr></hh:charProperties><hh:tabProperties itemCnt="3"><hh:tabPr id="0" autoTabLeft="0" autoTabRight="0"/><hh:tabPr id="1" autoTabLeft="1" autoTabRight="0"/><hh:tabPr id="2" autoTabLeft="0" autoTabRight="1"/></hh:tabProperties><hh:numberings itemCnt="1"><hh:numbering id="1" start="0"><hh:paraHead start="1" level="1" align="LEFT" useInstWidth="1" autoIndent="1" widthAdjust="0" textOffsetType="PERCENT" textOffset="50" numFormat="DIGIT" charPrIDRef="4294967295" checkable="0">^1.</hh:paraHead><hh:paraHead start="1" level="2" align="LEFT" useInstWidth="1" autoIndent="1" widthAdjust="0" textOffsetType="PERCENT" textOffset="50" numFormat="HANGUL_SYLLABLE" charPrIDRef="4294967295" checkable="0">^2.</hh:paraHead><hh:paraHead start="1" level="3" align="LEFT" useInstWidth="1" autoIndent="1" widthAdjust="0" textOffsetType="PERCENT" textOffset="50" numFormat="DIGIT" charPrIDRef="4294967295" checkable="0">^3)</hh:paraHead><hh:paraHead start="1" level="4" align="LEFT" useInstWidth="1" autoIndent="1" widthAdjust="0" textOffsetType="PERCENT" textOffset="50" numFormat="HANGUL_SYLLABLE" charPrIDRef="4294967295" checkable="0">^4)</hh:paraHead><hh:paraHead start="1" level="5" align="LEFT" useInstWidth="1" autoIndent="1" widthAdjust="0" textOffsetType="PERCENT" textOffset="50" numFormat="DIGIT" charPrIDRef="4294967295" checkable="0">(^5)</hh:paraHead><hh:paraHead start="1" level="6" align="LEFT" useInstWidth="1" autoIndent="1" widthAdjust="0" textOffsetType="PERCENT" textOffset="50" numFormat="HANGUL_SYLLABLE" charPrIDRef="4294967295" checkable="0">(^6)</hh:paraHead><hh:paraHead start="1" level="7" align="LEFT" useInstWidth="1" autoIndent="1" widthAdjust="0" textOffsetType="PERCENT" textOffset="50" numFormat="CIRCLED_DIGIT" charPrIDRef="4294967295" checkable="1">^7</hh:paraHead><hh:paraHead start="1" level="8" align="LEFT" useInstWidth="1" autoIndent="1" widthAdjust="0" textOffsetType="PERCENT" textOffset="50" numFormat="CIRCLED_HANGUL_SYLLABLE" charPrIDRef="4294967295" checkable="1">^8</hh:paraHead><hh:paraHead start="1" level="9" align="LEFT" useInstWidth="1" autoIndent="1" widthAdjust="0" textOffsetType="PERCENT" textOffset="50" numFormat="HANGUL_JAMO" charPrIDRef="4294967295" checkable="0"/><hh:paraHead start="1" level="10" align="LEFT" useInstWidth="1" autoIndent="1" widthAdjust="0" textOffsetType="PERCENT" textOffset="50" numFormat="ROMAN_SMALL" charPrIDRef="4294967295" checkable="1"/></hh:numbering></hh:numberings><hh:paraProperties itemCnt="20"><hh:paraPr id="0" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="1" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="1500" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="3000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="2" tabPrIDRef="1" condense="20" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="OUTLINE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="1000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="2000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="3" tabPrIDRef="1" condense="20" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="OUTLINE" idRef="0" level="1"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="2000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="4000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="4" tabPrIDRef="1" condense="20" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="OUTLINE" idRef="0" level="2"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="3000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="6000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="5" tabPrIDRef="1" condense="20" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="OUTLINE" idRef="0" level="3"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="4000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="8000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="6" tabPrIDRef="1" condense="20" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="OUTLINE" idRef="0" level="4"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="5000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="10000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="7" tabPrIDRef="1" condense="20" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="OUTLINE" idRef="0" level="5"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="6000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="12000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="8" tabPrIDRef="1" condense="20" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="OUTLINE" idRef="0" level="6"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="7000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="14000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="9" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="150" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="150" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="10" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="-1310" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="130" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="-2620" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="130" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="11" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="LEFT" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="130" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="130" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="12" tabPrIDRef="1" condense="20" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="LEFT" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="1200" unit="HWPUNIT"/><hc:next value="300" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="2400" unit="HWPUNIT"/><hc:next value="600" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="13" tabPrIDRef="2" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="LEFT" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="700" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="1400" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="14" tabPrIDRef="2" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="LEFT" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="1100" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="700" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="2200" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="1400" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="15" tabPrIDRef="2" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="LEFT" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="2200" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="700" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="4400" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="1400" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="16" tabPrIDRef="1" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/paragraph"><hh:heading type="OUTLINE" idRef="0" level="8"/></hp:case><hp:default><hh:heading type="NONE" idRef="0" level="0"/></hp:default></hp:switch><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="9000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="18000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="17" tabPrIDRef="1" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/paragraph"><hh:heading type="OUTLINE" idRef="0" level="9"/></hp:case><hp:default><hh:heading type="NONE" idRef="0" level="0"/></hp:default></hp:switch><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="10000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="20000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="18" tabPrIDRef="1" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/paragraph"><hh:heading type="OUTLINE" idRef="0" level="7"/></hp:case><hp:default><hh:heading type="NONE" idRef="0" level="0"/></hp:default></hp:switch><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="8000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="16000" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="19" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="800" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="150" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="1600" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="150" unit="HWPUNIT"/></hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr></hh:paraProperties><hh:styles itemCnt="23"><hh:style id="0" type="PARA" name="바탕글" engName="Normal" paraPrIDRef="0" charPrIDRef="0" nextStyleIDRef="0" langID="1042" lockForm="0"/><hh:style id="1" type="PARA" name="본문" engName="Body" paraPrIDRef="1" charPrIDRef="0" nextStyleIDRef="1" langID="1042" lockForm="0"/><hh:style id="2" type="PARA" name="개요 1" engName="Outline 1" paraPrIDRef="2" charPrIDRef="0" nextStyleIDRef="2" langID="1042" lockForm="0"/><hh:style id="3" type="PARA" name="개요 2" engName="Outline 2" paraPrIDRef="3" charPrIDRef="0" nextStyleIDRef="3" langID="1042" lockForm="0"/><hh:style id="4" type="PARA" name="개요 3" engName="Outline 3" paraPrIDRef="4" charPrIDRef="0" nextStyleIDRef="4" langID="1042" lockForm="0"/><hh:style id="5" type="PARA" name="개요 4" engName="Outline 4" paraPrIDRef="5" charPrIDRef="0" nextStyleIDRef="5" langID="1042" lockForm="0"/><hh:style id="6" type="PARA" name="개요 5" engName="Outline 5" paraPrIDRef="6" charPrIDRef="0" nextStyleIDRef="6" langID="1042" lockForm="0"/><hh:style id="7" type="PARA" name="개요 6" engName="Outline 6" paraPrIDRef="7" charPrIDRef="0" nextStyleIDRef="7" langID="1042" lockForm="0"/><hh:style id="8" type="PARA" name="개요 7" engName="Outline 7" paraPrIDRef="8" charPrIDRef="0" nextStyleIDRef="8" langID="1042" lockForm="0"/><hh:style id="9" type="PARA" name="개요 8" engName="Outline 8" paraPrIDRef="18" charPrIDRef="0" nextStyleIDRef="9" langID="1042" lockForm="0"/><hh:style id="10" type="PARA" name="개요 9" engName="Outline 9" paraPrIDRef="16" charPrIDRef="0" nextStyleIDRef="10" langID="1042" lockForm="0"/><hh:style id="11" type="PARA" name="개요 10" engName="Outline 10" paraPrIDRef="17" charPrIDRef="0" nextStyleIDRef="11" langID="1042" lockForm="0"/><hh:style id="12" type="CHAR" name="쪽 번호" engName="Page Number" paraPrIDRef="0" charPrIDRef="1" nextStyleIDRef="0" langID="1042" lockForm="0"/><hh:style id="13" type="CHAR" name="줄 번호" engName="Line Number" paraPrIDRef="0" charPrIDRef="0" nextStyleIDRef="0" langID="1042" lockForm="0"/><hh:style id="14" type="PARA" name="머리말" engName="Header" paraPrIDRef="9" charPrIDRef="2" nextStyleIDRef="14" langID="1042" lockForm="0"/><hh:style id="15" type="PARA" name="각주" engName="Footnote" paraPrIDRef="10" charPrIDRef="3" nextStyleIDRef="15" langID="1042" lockForm="0"/><hh:style id="16" type="PARA" name="미주" engName="Endnote" paraPrIDRef="10" charPrIDRef="3" nextStyleIDRef="16" langID="1042" lockForm="0"/><hh:style id="17" type="PARA" name="메모" engName="Memo" paraPrIDRef="11" charPrIDRef="4" nextStyleIDRef="17" langID="1042" lockForm="0"/><hh:style id="18" type="PARA" name="차례 제목" engName="TOC Heading" paraPrIDRef="12" charPrIDRef="5" nextStyleIDRef="18" langID="1042" lockForm="0"/><hh:style id="19" type="PARA" name="차례 1" engName="TOC 1" paraPrIDRef="13" charPrIDRef="6" nextStyleIDRef="19" langID="1042" lockForm="0"/><hh:style id="20" type="PARA" name="차례 2" engName="TOC 2" paraPrIDRef="14" charPrIDRef="6" nextStyleIDRef="20" langID="1042" lockForm="0"/><hh:style id="21" type="PARA" name="차례 3" engName="TOC 3" paraPrIDRef="15" charPrIDRef="6" nextStyleIDRef="21" langID="1042" lockForm="0"/><hh:style id="22" type="PARA" name="캡션" engName="Caption" paraPrIDRef="19" charPrIDRef="0" nextStyleIDRef="22" langID="1042" lockForm="0"/></hh:styles></hh:refList><hh:compatibleDocument targetProgram="HWP201X"><hh:layoutCompatibility/></hh:compatibleDocument><hh:docOption><hh:linkinfo path="" pageInherit="0" footnoteInherit="0"/></hh:docOption><hh:metaTag>{"name":""}</hh:metaTag><hh:trackchageConfig flags="56"/></hh:head></script>
+<script>
+// ===== DATA =====
+const D = {
+  역명: '○○초 시설관리 및 청소용역',
+  기관명: '경기중학교',
+  기관주소: '경기도 화성시 00로 00길 000',
+  구분: '사립',
+  기관대표: '○○○',
+  담당자: '주무관 ○○○',
+  검사자: '행정실장 ○○○',
+  업체명: '○○종합기술',
+  업체대표: '○○○',
+  전화: '02-0000-0000',
+  업체주소: '서울시 00구 00로 00길 000',
+  업종: '소규모테마형교육여행',
+  은행: '00은행',
+  사업자번호: '1234567890',
+  계좌: '000-000000-00-000',
+  계약금액: 52345600,
+  보증금액: 5234560,
+  계약일: '2020-10-10',
+  착수일: '2020-10-10',
+  준공기한: '2020-10-20',
+  실제준공일: '2020-10-20',
+  준공검사일: '2020-10-20',
+  하자담보: '1년',
+  지연배상금율: '1.3/1000',
+  계약보증금납부: '이행보증증권',
+  계약번호: '10',
+  공고번호: '9',
+  계약방법: '총액계약',
+};
+
+// helpers
+function fmt(n) {
+  if (!n && n !== 0) return '';
+  return Number(n).toLocaleString('ko-KR');
+}
+function won(n) {
+  if (!n && n !== 0) return '';
+  const num = Number(n);
+  return `금 ${fmt(num)} 원(금 ${numToKorean(num)} 원정)`;
+}
+function fmtDate(s) {
+  if (!s) return '';
+  const d = new Date(s);
+  if (isNaN(d)) return s;
+  return `${d.getFullYear()}년${String(d.getMonth()+1).padStart(2,'0')}월${String(d.getDate()).padStart(2,'0')}일`;
+}
+function fmtDateDot(s) {
+  if (!s) return '';
+  const d = new Date(s);
+  if (isNaN(d)) return s;
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function numToKorean(num) {
+  if (!num) return '영';
+  const units = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+  const positions = ['', '십', '백', '천'];
+  const bigUnits = ['', '만', '억', '조'];
+  let result = '';
+  const str = String(Math.floor(Number(num)));
+  const len = str.length;
+  for (let i = 0; i < len; i++) {
+    const digit = parseInt(str[i]);
+    const pos = len - 1 - i;
+    const bigPos = Math.floor(pos / 4);
+    const smallPos = pos % 4;
+    if (digit === 0) continue;
+    result += (digit === 1 && smallPos > 0 ? '' : units[digit]) + positions[smallPos];
+    if (smallPos === 0) result += bigUnits[bigPos];
+  }
+  return result || '영';
+}
+
+function get(key) { return D[key] || ''; }
+
+// ===== PAGES =====
+const pages = {
+  input: { title: '데이터 입력', render: renderInput },
+  integrated: { title: '계약이행 통합 서약서', render: renderIntegrated },
+  contract: { title: '용역표준계약서', render: renderContract },
+  accounting: { title: '관련 회계예규 적용', render: renderAccounting },
+  acceptance: { title: '승낙사항', render: renderAcceptance },
+  seal: { title: '사용인감계', render: renderSeal },
+  bond: { title: '계약보증금납부서', render: renderBond },
+  bond_confirm: { title: '계약보증금 지급확약서', render: renderBondConfirm },
+  integrity: { title: '청렴서약서', render: renderIntegrity },
+  contract_memo: { title: '수의계약 각서', render: renderContractMemo },
+  contract_check: { title: '수의계약 체결 제한 여부 확인서', render: renderContractCheck },
+  tax: { title: '조세포탈 관련 각서', render: renderTax },
+  privacy: { title: '개인정보보안서약서', render: renderPrivacy },
+  labor: { title: '근로자 권리보호 이행서약서', render: renderLabor },
+  security_rep: { title: '보안서약서(업체대표)', render: renderSecurityRep },
+  security_staff: { title: '보안서약서(참여인력)', render: renderSecurityStaff },
+  start: { title: '착수계', render: renderStart },
+  labor_agree: { title: '노무비구분·지급합의서', render: renderLaborAgree },
+  labor_exclude: { title: '노무비구분·지급제외확인서', render: renderLaborExclude },
+  labor_mgmt: { title: '노무비구분관리제외확인서', render: renderLaborMgmt },
+  labor_pay: { title: '노무비지급내역서', render: renderLaborPay },
+  security_end: { title: '보안확약서(사업종료시)', render: renderSecurityEnd },
+  complete: { title: '완수확인서', render: renderComplete },
+  payment: { title: '대금청구서', render: renderPayment },
+};
+
+// ===== 체크박스 인터랙션 =====
+function pickCB(el) {
+  const group = el.closest('.cb-group');
+  const opts  = group.querySelectorAll('.cb-opt');
+  const wasChecked = el.classList.contains('cb-checked');
+  // 모두 초기화
+  opts.forEach(o => {
+    o.classList.remove('cb-checked');
+    o.textContent = o.textContent.replace('[✓]', '[ ]');
+  });
+  group.classList.remove('cb-has-check');
+  // 이미 체크된 걸 다시 클릭 → 해제(토글)
+  if (!wasChecked) {
+    el.classList.add('cb-checked');
+    el.textContent = el.textContent.replace('[ ]', '[✓]');
+    group.classList.add('cb-has-check');
+  }
+}
+
+// cb-group HTML 생성 헬퍼
+let _cbIdx = 0;
+function cbGroup(...opts) {
+  return `<div class="cb-group">${
+    opts.map(o => `<span class="cb-opt" onclick="pickCB(this)">[ ] ${o}</span>`).join('')
+  }</div>`;
+}
+
+function showPage(id) {
+  document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+  const allBtns = document.querySelectorAll('.menu-item');
+  allBtns.forEach(btn => {
+    if (btn.getAttribute('onclick') === `showPage('${id}')`) btn.classList.add('active');
+  });
+  const p = pages[id];
+  if (!p) return;
+  document.getElementById('page-title').textContent = p.title;
+  document.getElementById('content').innerHTML = p.render();
+  if (id !== 'input') {
+    // 편집 가능한 요소에 직접 contenteditable 적용 (테이블 셀, 단락, 서명란 등)
+    document.querySelectorAll(
+      '#content td:not(.label-cell), #content p, #content .doc-body, #content .num-item, #content .sign-area, #content .sign-line, #content .doc-title'
+    ).forEach(el => {
+      if (el.tagName === 'TD' || el.tagName === 'P' || el.classList.contains('doc-body') ||
+          el.classList.contains('num-item') || el.classList.contains('sign-area') ||
+          el.classList.contains('sign-line') || el.classList.contains('doc-title')) {
+        el.contentEditable = 'true';
+        el.spellcheck = false;
+        el.classList.add('editable');
+      }
+    });
+    // 체크박스, 도장 박스는 편집 불가
+    document.querySelectorAll('.cb-opt, .seal-box, .cb-group').forEach(el => {
+      el.contentEditable = 'false';
+      el.classList.remove('editable');
+    });
+    const badge = document.getElementById('edit-badge');
+    if (badge) badge.style.display = 'inline-block';
+    document.getElementById('hwpx-btn').style.display = 'inline-block';
+  } else {
+    const badge = document.getElementById('edit-badge');
+    if (badge) badge.style.display = 'none';
+    document.getElementById('hwpx-btn').style.display = 'none';
+  }
+}
+
+// ===== INPUT PAGE (통합) =====
+function renderInput() {
+  return `
+  <form oninput="updateData()" onsubmit="return false;">
+  <div class="input-section" style="background:#e8f0fe; padding:12px 20px;">
+    <p style="color:#1e3a5f; font-size:13px; font-weight:600;">📋 데이터 입력 — 한 번만 입력하면 모든 서식(용역 계약 + 중대재해 안전서류)이 자동 생성됩니다.</p>
+    <p style="color:#555; font-size:11px; margin-top:4px;">강조(노란색) 항목이 핵심 필드입니다.</p>
+  </div>
+
+  <div class="input-section">
+    <h3>1. 발주기관 (학교)</h3>
+    <div class="input-grid">
+      <div class="field highlight"><label>기관명 / 학교명</label><input id="f_기관명" value="${D.기관명}" oninput="S.학교명=this.value"></div>
+      <div class="field"><label>기관 주소</label><input id="f_기관주소" value="${D.기관주소}" oninput="S.학교주소=this.value"></div>
+      <div class="field"><label>공/사립 구분</label>
+        <select id="f_구분"><option ${D.구분==='공립'?'selected':''}>공립</option><option ${D.구분==='사립'?'selected':''}>사립</option></select>
+      </div>
+      <div class="field"><label>고유번호 (사업자)</label><input id="f_고유번호" value="${S.고유번호}" oninput="S.고유번호=this.value"></div>
+      <div class="field"><label>대표자 성명</label><input id="f_기관대표" value="${D.기관대표}" oninput="S.학교대표=this.value"></div>
+      <div class="field"><label>업무담당자 직·성명</label><input id="f_담당자" value="${D.담당자}" oninput="S.담당자직=this.value.split(' ')[0]||this.value; S.담당자명=this.value.split(' ').slice(1).join(' ')||this.value"></div>
+      <div class="field"><label>검사자 직·성명</label><input id="f_검사자" value="${D.검사자}"></div>
+    </div>
+  </div>
+
+  <div class="input-section">
+    <h3>2. 계약업체</h3>
+    <div class="input-grid">
+      <div class="field highlight"><label>업체명</label><input id="f_업체명" value="${D.업체명}" oninput="S.업체명s=this.value"></div>
+      <div class="field"><label>대표자</label><input id="f_업체대표" value="${D.업체대표}" oninput="S.업체대표s=this.value"></div>
+      <div class="field"><label>전화번호</label><input id="f_전화" value="${D.전화}" oninput="S.업체전화=this.value"></div>
+      <div class="field"><label>주소</label><input id="f_업체주소" value="${D.업체주소}" oninput="S.업체주소s=this.value"></div>
+      <div class="field"><label>업종(등록)</label><input id="f_업종" value="${D.업종}"></div>
+      <div class="field"><label>사업자등록번호</label><input id="f_사업자번호" value="${D.사업자번호}" oninput="S.업체사업자=this.value"></div>
+      <div class="field"><label>은행명</label><input id="f_은행" value="${D.은행}"></div>
+      <div class="field"><label>계좌번호</label><input id="f_계좌" value="${D.계좌}"></div>
+      <div class="field"><label>안전담당자 직·성명</label><input id="f_안전담당" value="${S.안전담당직} ${S.안전담당명}" oninput="S.안전담당직=this.value.split(' ')[0]||this.value; S.안전담당명=this.value.split(' ').slice(1).join(' ')||this.value"></div>
+      <div class="field"><label>안전담당자 전화</label><input id="f_안전담당전화" value="${S.안전담당전화}" oninput="S.안전담당전화=this.value"></div>
+    </div>
+  </div>
+
+  <div class="input-section">
+    <h3>3. 계약 내용</h3>
+    <div class="input-grid three">
+      <div class="field highlight"><label>용역명 / 계약명</label><input id="f_역명" value="${D.역명}" oninput="S.계약명=this.value"></div>
+      <div class="field highlight"><label>계약금액 (원)</label><input id="f_계약금액" type="number" value="${D.계약금액}" oninput="S.계약금액s=Number(this.value).toLocaleString('ko-KR')"></div>
+      <div class="field"><label>계약이행보증금액 (원)</label><input id="f_보증금액" type="number" value="${D.보증금액}"></div>
+      <div class="field"><label>계약보증금납부방법</label><input id="f_계약보증금납부" value="${D.계약보증금납부}"></div>
+      <div class="field"><label>계약일</label><input id="f_계약일" type="date" value="${D.계약일}" oninput="S.계약체결일=this.value"></div>
+      <div class="field"><label>착수일 / 계약기간 시작</label><input id="f_착수일" type="date" value="${D.착수일}" oninput="S.계약시작=this.value"></div>
+      <div class="field"><label>준공기한 / 계약기간 종료</label><input id="f_준공기한" type="date" value="${D.준공기한}" oninput="S.계약종료=this.value"></div>
+      <div class="field"><label>실제준공일</label><input id="f_실제준공일" type="date" value="${D.실제준공일}"></div>
+      <div class="field"><label>준공검사일</label><input id="f_준공검사일" type="date" value="${D.준공검사일}"></div>
+      <div class="field"><label>하자담보기간</label><input id="f_하자담보" value="${D.하자담보}"></div>
+      <div class="field"><label>지연배상금율</label><input id="f_지연배상금율" value="${D.지연배상금율}"></div>
+      <div class="field"><label>계약번호</label><input id="f_계약번호" value="${D.계약번호}"></div>
+      <div class="field"><label>공고번호</label><input id="f_공고번호" value="${D.공고번호}"></div>
+      <div class="field"><label>계약방법</label><input id="f_계약방법" value="${D.계약방법}"></div>
+    </div>
+  </div>
+  </form>`;
+}
+
+function updateData() {
+  const fields = ['역명','기관명','기관주소','구분','기관대표','담당자','검사자',
+    '업체명','업체대표','전화','업체주소','업종','은행','사업자번호','계좌',
+    '계약금액','보증금액','계약보증금납부','계약일','착수일','준공기한',
+    '실제준공일','준공검사일','하자담보','지연배상금율','계약번호','공고번호','계약방법'];
+  fields.forEach(k => {
+    const el = document.getElementById('f_'+k);
+    if (el) D[k] = el.value;
+  });
+  // S 객체 동기화
+  S.학교명 = D.기관명;
+  S.학교주소 = D.기관주소;
+  S.학교대표 = D.기관대표;
+  S.계약명 = D.역명;
+  S.계약체결일 = D.계약일;
+  S.계약시작 = D.착수일;
+  S.계약종료 = D.준공기한;
+  S.계약금액s = Number(D.계약금액).toLocaleString('ko-KR');
+  S.업체명s = D.업체명;
+  S.업체대표s = D.업체대표;
+  S.업체전화 = D.전화;
+  S.업체주소s = D.업체주소;
+  S.업체사업자 = D.사업자번호;
+  // 담당자/안전담당자 파싱 (직 성명 분리)
+  const dm = document.getElementById('f_담당자');
+  if (dm) { const parts = dm.value.split(' '); S.담당자직 = parts[0]||''; S.담당자명 = parts.slice(1).join(' ')||dm.value; }
+  const am = document.getElementById('f_안전담당');
+  if (am) { const parts = am.value.split(' '); S.안전담당직 = parts[0]||''; S.안전담당명 = parts.slice(1).join(' ')||am.value; }
+  const at = document.getElementById('f_안전담당전화');
+  if (at) S.안전담당전화 = at.value;
+  const gn = document.getElementById('f_고유번호');
+  if (gn) S.고유번호 = gn.value;
+}
+
+// ===== SIGN AREA HELPER =====
+function signArea(org, rep, extra='') {
+  return `
+  <div class="sign-area mt30">
+    ${fmtDate(D.계약일)}<br><br>
+    ${org} : <span class="sign-line">${rep}</span> <span class="seal-box">인</span><br>
+    ${extra}
+  </div>`;
+}
+
+// ===== 계약이행 통합 서약서 (경기도교육청 HWP 원본 양식 반영, 11개 항목 + [붙임1]) =====
+function renderIntegrated() {
+  const YN  = () => cbGroup('예', '아니오');
+  const YNX = () => cbGroup('예', '아니오', '해당없음');
+  const GB  = () => cbGroup('각서', '보증서');
+  const tdNo  = 'class="label-cell" style="text-align:center;width:28px;padding:4px 2px;"';
+  const tdGu  = 'class="label-cell" style="text-align:center;width:92px;padding:6px 4px;line-height:1.5;"';
+  const tdTx  = 'style="padding:6px 8px;line-height:1.65;font-size:10pt;text-align:justify;"';
+  const tdCb  = 'style="text-align:left;padding:4px 6px;width:96px;font-size:10pt;"';
+  const small = 'style="font-size:9pt;color:#333;margin-top:2px;"';
+
+  const restrict = [
+    '발주기관의 소속 고위공직자, 배우자, 고위공직자의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?',
+    '계약 업무를 법령상·사실상 담당하는 공직자, 배우자, 공직자의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?',
+    '발주기관(산하기관)의 감독기관 소속 고위공직자, 배우자, 고위공직자의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?',
+    '발주기관(자회사)의 모회사 소속 고위공직자, 배우자, 고위공직자의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?',
+    '상임위원회 위원의 국회의원, 배우자, 국회의원의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?',
+    '공공기관을 감사 또는 조사하는 지방의회의 의원, 배우자, 의원의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?',
+    '①부터 ⑥까지 어느 하나에 해당하는 사람이 대표자인 법인 또는 단체에 해당하는가?',
+    '①부터 ⑥까지 어느 하나에 해당하는 사람과 특수한 관계의 사업자(공직자, 배우자, 공직자의 직계존속·비속, 생계를 같이하는 배우자의 직계존속·비속이 단독으로 또는 합산하여 ① 발행주식 총수의 100분의 30 이상, ② 출자지분 총수의 100분의 30 이상, ③ 자본금 총액의 100분의 50 이상을 소유하고 있는 법인 또는 단체)에 해당하는가?',
+  ];
+  const circ = ['①','②','③','④','⑤','⑥','⑦','⑧'];
+
+  const exclusion = [
+    '① 견적서 제출 마감일 현재 부도·파산·해산·영업정지 등이 확정된 경우',
+    '② 입찰참가자격 제한기간 중에 있는 자(법 제31조 제5항에 해당되는 경우 예외)',
+    '③ 견적서 제출 마감일을 기준으로 법 제31조 또는 다른 법령에 따라 부실이행, 담합행위, 입찰·계약 서류의 허위·위조 제출, 입찰·낙찰·계약이행 관련 뇌물 제공으로 부정당업자 제재 처분을 받고 그 종료일로부터 3개월이 지나지 아니한 자(법 제31조 제5항에 해당되는 경우 예외)',
+    '④ 공사 또는 기술용역의 경우 기술자 보유현황이 관련법령에 따른 업종등록 기준에 미달하는 자',
+    '<span style="padding-left:1.2em;display:block;font-size:9.5pt;">※ 기술자 보유현황의 심사는 「낙찰자결정기준」 제1장 입찰참가자격 사전심사기준 제5절 “4”의 그밖에 해당공사 수행능력상 결격여부, 제2장의2 기술·학술연구 용역 적격심사 세부기준 &lt;별표&gt;의 기술인력 평가방법을 준용한다. 이때 ‘입찰공고일’은 ‘안내공고일’로 ‘적격심사서류 제출마감일’은 ‘견적서 제출마감일’로 본다.</span>',
+    '⑤ 견적서 제출 마감일 기준 최근 3개월 이내에 해당 지방자치단체의 입찰·계약 및 그 이행과 관련하여 10일 이상 지연배상금 부과, 정당한 이행명령 거부, 불법하도급, 5회 이상 하자보수 또는 물의를 일으키는 등 신용이 떨어져 계약 체결이 곤란하다고 판단되는 자',
+    '⑥ 견적서 제출 마감일 기준 최근 3개월 이내에 해당 지방자치단체와의 계약 및 그 이행과 관련하여 정당한 이유 없이 계약에 응하지 아니하거나 포기서를 제출한 사실이 있는 자',
+    '<span style="padding-left:1.2em;display:block;font-size:9.5pt;">※ 정당한 이유 없이 계약을 체결하지 아니하는 경우는 법 제31조에 따른 입찰참가자격 제한에는 해당되지 아니하나 수의계약 배제사유에 해당됨.</span>',
+    '⑦ 수의계약 체결일 현재 법 제33조에 해당하는 자',
+    '<span style="padding-left:1.2em;display:block;">1. 지방자치단체의 장 또는 지방의회의원의 배우자인 사업자(법인은 대표자)</span>',
+    '<span style="padding-left:1.2em;display:block;">2. 지방자치단체의 장 또는 지방의회의원(배우자 포함)의 직계 존·비속인 사업자</span>',
+    '<span style="padding-left:1.2em;display:block;">3. 지방자치단체의 장 또는 지방의회의원이 자본금 총액의 50% 이상을 소유한 자</span>',
+    '<span style="padding-left:1.2em;display:block;">4. 지방자치단체의 장 또는 지방의회의원 가족(배우자, 직계존·비속)의 합산금액이 자본금 총액의 50% 이상을 소유한 사업자</span>',
+    '<span style="padding-left:1.2em;display:block;">5. 지방자치단체의 장 또는 지방의회의원 소유업체의 계열회사 등</span>',
+    '⑧ 발주기관이 제한한 자격요건 등을 충족하지 아니한 자',
+    '⑨ 그밖에 계약담당자가 계약이행능력이 없다고 판단되는 명백한 증거가 있는 자',
+    '⑩ 「재난 및 안전관리 기본법」 제60조에 따라 특별재난지역으로 선포된 지역의 재난복구공사(용역)의 경우 결격여부 심사일 현재 계약금액 5천만 원 이상 해당 업종 관급공사 또는 계약금액 2천만 원 이상 관급용역이 3건 이상인 자. 다만, 동시에 여러건의 수의계약 체결 예정자로 선정된 경우에는 기존 계약을 포함하여 3건까지 수의계약을 체결할 수 있다. (단, 제3절의 “1”에 따른 2인 이상 견적서 제출 수의계약에 한한다)',
+  ];
+
+  return `<div class="doc-wrap"><div class="doc-page multi" style="padding:50px 56px;">
+
+  <div class="doc-title" style="font-size:17pt;letter-spacing:2px;margin-bottom:16px;">계약이행 통합 서약서</div>
+
+  <table class="doc-table" style="margin-bottom:14px;">
+    <tr><td class="label-cell" style="width:110px;">계약명</td><td colspan="3">${D.역명}</td></tr>
+    <tr><td class="label-cell">발주기관</td><td colspan="3">${D.기관명}</td></tr>
+    <tr>
+      <td class="label-cell">업체명</td><td>${D.업체명}</td>
+      <td class="label-cell" style="width:90px;">대표자</td><td style="width:190px;">${D.업체대표} <span class="seal-box" style="width:auto;height:auto;line-height:1.4;border:none;margin-left:4px;">(인)</span></td>
+    </tr>
+    <tr>
+      <td class="label-cell">사업자등록번호</td><td>${D.사업자번호}</td>
+      <td class="label-cell">연락처</td><td>${D.전화}</td>
+    </tr>
+    <tr><td class="label-cell">주소</td><td colspan="3">${D.업체주소}</td></tr>
+  </table>
+
+  <table class="doc-table">
+    <thead>
+      <tr>
+        <th style="width:28px;">순</th><th style="width:92px;">구분</th>
+        <th colspan="2">이행 내용</th><th style="width:96px;">세부내용</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td ${tdNo}>1</td><td ${tdGu}>계약일반조건</td>
+        <td colspan="2" ${tdTx}>상기 본인(법인)은 「지방자치단체 입찰 및 계약 집행기준」 제9장 계약 일반조건을 준수합니다.</td>
+        <td ${tdCb}>${YN()}</td>
+      </tr>
+      <tr>
+        <td ${tdNo}>2</td><td ${tdGu}>수의계약 각서</td>
+        <td colspan="2" ${tdTx}>귀 기관과 수의계약을 체결함에 있어서 [붙임1] 수의계약 배제사유 중 어느 사유에도 해당되지 않으며 차후에 이러한 사실이 발견된 경우 계약의 해제·해지 및 부정당업자 제재 처분을 받아도 하등의 이유를 제기하지 않겠습니다.
+          <div ${small}>[붙임1] 수의계약 배제사유 1부</div></td>
+        <td ${tdCb}>${YNX()}</td>
+      </tr>
+      ${restrict.map((t, i) => `
+      <tr>
+        ${i === 0 ? `<td ${tdNo} rowspan="${restrict.length + 1}">3</td><td ${tdGu} rowspan="${restrict.length + 1}">수의계약<br>체결 제한<br>여부 확인서</td>` : ''}
+        <td style="text-align:center;width:26px;padding:4px 2px;font-size:10pt;">${circ[i]}</td>
+        <td ${tdTx}>${t}</td>
+        <td ${tdCb}>${YNX()}</td>
+      </tr>`).join('')}
+      <tr>
+        <td colspan="3" ${tdTx}>「공직자의 이해충돌 방지법」 제12조에 따른 수의계약 체결 제한에 대하여 위와 같이 확인합니다. 만약 위 사항이 사실과 다른 경우에는 어떠한 처벌이나 불이익도 감수할 것을 서약합니다.</td>
+      </tr>
+      <tr>
+        <td ${tdNo} rowspan="2">4</td><td ${tdGu} rowspan="2">계약보증금</td>
+        <td colspan="2" rowspan="2" ${tdTx}>계약서의 의무를 이행하지 못하여 계약보증금을 귀 기관에 귀속시켜야 할 사유가 발생하면 「지방자치단체를 당사자로 하는 계약에 관한 법률」 제15조제3항에 따라 즉시 해당하는 금액을 현금으로 납부하겠습니다.</td>
+        <td ${tdCb}>${YN()}</td>
+      </tr>
+      <tr><td ${tdCb}>${GB()}</td></tr>
+      <tr>
+        <td ${tdNo}>5</td><td ${tdGu}>청렴계약<br>이행 서약서</td>
+        <td colspan="2" ${tdTx}>임직원과 대리인은 발주기관에서 시행하는 공사·용역·물품 등의 입찰·낙찰, 계약체결, 「지방자치단체를 당사자로 하는 계약에 관한 법률」 제16조에 따른 감독, 제17조에 따른 검사 또는 계약이행 등의 과정(준공, 납품 이후를 포함한다)에 참여하면서 직접 또는 간접적인 사례, 증여, 금품·향응 등(친인척 등에 대한 부정한 취업 제공 포함)을 제공 또는 약속하거나 수수하지 않을 것이며, 불공정한 행위를 하지 않을 것이며, 알선·청탁을 통하여 입찰 또는 계약과 관련된 특정 정보의 제공을 요구하거나 받는 행위를 하지 않겠습니다.
+          <div ${small}>※ 서약서(양식) 탑재: 경기도교육청누리집 &gt; 통합자료실 &gt; 과별자료실 &gt; 재무관리과</div></td>
+        <td ${tdCb}>${YN()}</td>
+      </tr>
+      <tr>
+        <td ${tdNo}>6</td><td ${tdGu}>조세포탈 여부<br>확인 서약서</td>
+        <td colspan="2" ${tdTx}>「지방자치단체를 당사자로 하는 계약에 관한 법률」 제31조의5에 따른 조세포탈 등을 한 자가 아님을 서약하며, 조세포탈 등을 한 자에 해당하여 유죄판결이 확정된 날부터 2년이 지나지 않은 사실이 발견된 때에는 계약 해제ㆍ해지를 감수하겠으며, 「지방계약법 시행령」 제93조에 따라 부정당업자의 입찰참가자격 제한 처분을 받겠습니다.</td>
+        <td ${tdCb}>${YN()}</td>
+      </tr>
+      <tr>
+        <td ${tdNo} rowspan="2">7</td><td ${tdGu} rowspan="2">하자보수<br>보증금</td>
+        <td colspan="2" rowspan="2" ${tdTx}>「지방자치단체를 당사자로 하는 계약에 관한 법률 시행령」 제71조에 따라 하자보수보증금을 귀 학교(기관)에 귀속시켜야 할 사유가 발생하면 즉시 해당하는 금액을 현금으로 납부하겠습니다.</td>
+        <td ${tdCb}>${YN()}</td>
+      </tr>
+      <tr><td ${tdCb}>${GB()}</td></tr>
+      <tr>
+        <td ${tdNo}>8</td><td ${tdGu}>[공사] 전기·수도<br>사용료 납부 확인</td>
+        <td colspan="2" ${tdTx}>공사용 전기·수도 계량기를 설치하여 사용할 수 없으므로 기관의 전기 및 수도를 사용 후 「경기도교육청 학교 시설공사 시 공공요금(전기료 및 수도료) 징수 개선방안」 및 「학교시설공사 업무편람」에 따라 전기료 및 수도료를 학교(교특)회계에 세입조치하고 이의를 제기하지 않겠습니다.</td>
+        <td ${tdCb}>${YNX()}</td>
+      </tr>
+      <tr>
+        <td ${tdNo}>9</td><td ${tdGu}>안전 및 보건<br>확보 의무 준수</td>
+        <td colspan="2" ${tdTx}>「산업안전보건법」 및 「중대재해 처벌 등에 관한 법률」 등 관련 법규에 따라 사업장에서 종사자의 안전·보건상 유해 요인 또는 위험을 방지하기 위하여 다음과 같이 의무사항을 이행하겠습니다.
+          <table class="doc-table" style="margin:6px 0 2px;">
+            <tr><td style="padding:5px 8px;font-size:9.5pt;line-height:1.6;text-align:justify;">
+              <div style="text-align:center;font-weight:bold;">[ 안전 및 보건 확보 의무사항 ]</div>
+              <div>① “과업 수행자”는 계약을 수행함에 있어 종사자의 안전을 확보하기 위해 안전ㆍ보건 관계법령 및 중대재해처벌법상 의무사항을 빠짐없이 이행하고 만약 의무사항을 이행하지 않아 중대산업재해가 발생할 경우 그에 따라 발생하는 법적 처벌 및 경기도교육청의 불이익 조치에 대해 이의를 제기하지 않는다.</div>
+              <div>② “과업 수행자”는 종사자로부터 유해·위험요인에 대한 신고가 접수될 경우 보수·보강 등 개선 작업을 신속하게 조치하고 경기도교육청 및 관계행정기관의 이행 명령에 따른 개선사항을 성실히 이행한다.</div>
+              <div>③ 사업수행에 필요한 작업, 점검 등 모든 작업을 할 때에는 철저한 안전대책을 수립한 후 작업에 임하여야 하며, 안전사고가 발생한 때에는 과업 수행자의 책임 하에 후속 조치를 취하여야 한다.</div>
+              <div>④ 중대산업재해 발생 시 선보고 후 사고처리 하여야 한다.</div>
+            </td></tr>
+          </table></td>
+        <td ${tdCb}>${YNX()}</td>
+      </tr>
+      <tr>
+        <td ${tdNo}>10</td><td ${tdGu}>개인정보이용·<br>수집 동의</td>
+        <td colspan="2" ${tdTx}>「개인정보 보호법」 제15조, 제22조에 따라 개인정보를 수집 및 이용하는 것에 동의합니다.
+          <table class="doc-table" style="margin:6px 0 2px;font-size:9pt;">
+            <tr><th style="font-size:9pt;">항목</th><th style="font-size:9pt;width:110px;">수집ㆍ이용 목적</th><th style="font-size:9pt;width:110px;">보유ㆍ이용기간</th></tr>
+            <tr><td style="font-size:9pt;">대표자명, 주소, 생년월일, (휴대)전화번호, 계좌번호, 이메일</td><td style="font-size:9pt;text-align:center;">계약업무 진행</td><td style="font-size:9pt;text-align:center;">계약체결일로부터 5년</td></tr>
+          </table></td>
+        <td ${tdCb}>${YN()}</td>
+      </tr>
+      <tr>
+        <td ${tdNo}>11</td><td ${tdGu}>기타 사항</td>
+        <td colspan="2" ${tdTx}>
+          <div>① 법령, 예규 등 각종 규정은 개정될 수 있으며, 최신 규정을 따름</div>
+          <div>② 변경 계약 시 변경 사항을 따르되, 계약이행 통합 서약서는 기존 서약서로 갈음할 수 있음</div></td>
+        <td ${tdCb}></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="sign-area mt20" style="font-size:11pt;line-height:2.2;">
+    ${fmtDate(D.계약일)}<br>
+    계약상대자 : <span class="sign-line" style="min-width:150px;">${D.업체명}</span> 대표 <span class="sign-line" style="min-width:80px;">${D.업체대표}</span> <span class="seal-box">인</span>
+  </div>
+  <p style="font-size:13pt;font-weight:bold;margin-top:14px;">${D.기관명}장 귀하</p>
+</div></div>
+
+<div class="doc-wrap" style="margin-top:16px;"><div class="doc-page" style="padding:50px 56px;">
+  <p style="font-size:11pt;margin-bottom:14px;">[붙임1]</p>
+  <table class="doc-table">
+    <tr><th style="font-size:12pt;padding:8px;">수의계약 배제사유</th></tr>
+    <tr><td style="padding:10px 14px;font-size:10pt;line-height:1.75;text-align:justify;">
+      ${exclusion.map(x => x.startsWith('<span') ? x : `<div style="padding-left:1.2em;text-indent:-1.2em;">${x}</div>`).join('\n      ')}
+    </td></tr>
+  </table>
+</div></div>`;
+}
+
+// ===== CONTRACT =====
+function renderContract() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">용 역 표 준 계 약 서</div>
+  <div style="text-align:right; margin-bottom:10px; font-size:10pt;">
+    계약번호 제 ${D.계약번호} 호<br>공고번호 제 ${D.공고번호} 호
+  </div>
+  <table class="doc-table">
+    <tr>
+      <td rowspan="4" class="label-cell" style="width:60px;">계<br>약<br>자</td>
+      <td class="label-cell" style="width:100px;">발&nbsp;&nbsp;주&nbsp;&nbsp;처</td>
+      <td colspan="3">${D.기관명}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">계약상대자</td>
+      <td colspan="3">상호 또는 법인명칭 : ${D.업체명} &nbsp;&nbsp;&nbsp; 사업자등록번호 : ${D.사업자번호}</td>
+    </tr>
+    <tr>
+      <td class="label-cell"></td>
+      <td colspan="3">주 소 : ${D.업체주소} &nbsp;&nbsp;&nbsp; 전화번호 : ${D.전화}</td>
+    </tr>
+    <tr>
+      <td class="label-cell"></td>
+      <td colspan="3">대표자 : ${D.업체대표}</td>
+    </tr>
+    <tr>
+      <td rowspan="6" class="label-cell">계<br>약<br>내<br>용</td>
+      <td class="label-cell">용&nbsp;&nbsp;역&nbsp;&nbsp;명</td>
+      <td colspan="3">${D.역명}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">계&nbsp;약&nbsp;금&nbsp;액</td>
+      <td colspan="3">${won(D.계약금액)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">총용역부기금액</td>
+      <td colspan="3">${won(D.계약금액)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">계약이행기간</td>
+      <td colspan="3">${fmtDateDot(D.착수일)} ~ ${fmtDateDot(D.준공기한)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">계약보증금</td>
+      <td colspan="3">${won(D.보증금액)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">지체상금율</td>
+      <td colspan="3">${D.지연배상금율}</td>
+    </tr>
+  </table>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    위 용역에 관하여 발주처와 계약상대자는 대등한 입장에서 붙임 계약문서에 의하여 공정하게 계약을 체결하고 신의에 따라 성실히 계약상의 의무를 이행할 것을 확약하며, 이 증서를 2통 작성하여 계약당사자가 기명·날인 후 각 1통씩 보관한다.
+  </p>
+  ${signArea(D.기관명, D.기관대표,
+    `계약상대자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== ACCOUNTING =====
+function renderAccounting() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">관련 회계예규 적용</div>
+  <p class="doc-body mt20">
+    본 계약 체결 당시의 회계예규[입찰유의서, 용역계약 일반조건 등]는 본계약서의 첨부 여부와 관계없이 당연히 적용된다.
+  </p>
+  ${signArea(D.기관명, D.기관대표,
+    `계약상대자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== ACCEPTANCE =====
+function renderAcceptance() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">승 낙 사 항 (용 역 집 행)</div>
+  <div class="mt20">
+    <div class="num-item">1) 계약사항에 의하여 ${fmtDate(D.착수일)} 착수하고 ${fmtDate(D.준공기한)}까지 완수하여야 한다.</div>
+    <div class="num-item">2) 계약의 변경으로 인하여 계약금액에 증감이 생긴 때에는 명세서상의 단가로 증감하고 그 총액에 의하기 어려운 때에는 설계변경 당시의 단가에 의한다.</div>
+    <div class="num-item">3) 기한 내에 용역를 준공하지 못한 때에는 그 지연일수 1일에 대하여 계약금액의 ${D.지연배상금율}에 해당하는 지연배상금을 납부하여야 하며, 납부하여야할 금액은 계약대가에서 상계할 수 있다.</div>
+    <div class="num-item">4) 계약상대자는 용역 준공일로부터 ${D.하자담보}간 그 용역의 하자에 대하여 담보 책임을 진다.</div>
+    <div class="num-item">5) 계약상대자는 계약이행 중 발생한 제3자에 대한 손해를 배상하여야 한다.</div>
+    <div class="num-item">6) 계약상대자는 계약이행을 위하여 필요한 경우를 제외하고는 계약서류의 내용을 누설하여서는 아니 된다.</div>
+  </div>
+  ${signArea(D.기관명, D.기관대표,
+    `계약상대자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== SEAL =====
+function renderSeal() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">사 용 인 감 계</div>
+  <table class="doc-table mt20">
+    <tr>
+      <td class="label-cell" style="width:40%;">증 명 인 감</td>
+      <td class="label-cell">사 용 인 감</td>
+    </tr>
+    <tr>
+      <td style="height:100px; text-align:center; font-size:9pt; color:#aaa;">(날인)</td>
+      <td style="height:100px; text-align:center; font-size:9pt; color:#aaa;">(날인)</td>
+    </tr>
+  </table>
+  <p class="doc-body mt20">
+    위 사용인감을 사용하오니 증명하여 주시기 바랍니다.
+  </p>
+  <table class="doc-table mt20">
+    <tr><td class="label-cell" style="width:120px;">용&nbsp;&nbsp;역&nbsp;&nbsp;명</td><td>${D.역명}</td></tr>
+    <tr><td class="label-cell">업&nbsp;&nbsp;체&nbsp;&nbsp;명</td><td>${D.업체명}</td></tr>
+    <tr><td class="label-cell">대&nbsp;&nbsp;표&nbsp;&nbsp;자</td><td>${D.업체대표}</td></tr>
+    <tr><td class="label-cell">주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소</td><td>${D.업체주소}</td></tr>
+  </table>
+  ${signArea(D.기관명, D.기관대표)}
+</div></div>`;
+}
+
+// ===== BOND =====
+function renderBond() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">계 약 보 증 금  납 부 서</div>
+  <table class="doc-table mt20">
+    <tr>
+      <td class="label-cell" style="width:120px;">입&nbsp;찰&nbsp;번&nbsp;호</td>
+      <td>제 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 호</td>
+      <td class="label-cell" style="width:120px;">입찰연월일</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td class="label-cell">계&nbsp;약&nbsp;건&nbsp;명</td>
+      <td colspan="3">${D.역명}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">계&nbsp;약&nbsp;번&nbsp;호</td>
+      <td>제 ${D.계약번호} 호</td>
+      <td class="label-cell">계약(예정)연월일</td>
+      <td>${fmtDateDot(D.계약일)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">계&nbsp;약&nbsp;금&nbsp;액</td>
+      <td colspan="3">${won(D.계약금액)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">계약보증금액</td>
+      <td colspan="3">${won(D.보증금액)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">보증금납부방법</td>
+      <td colspan="3">${D.계약보증금납부}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">계약이행기간</td>
+      <td colspan="3">${fmtDateDot(D.착수일)} ~ ${fmtDateDot(D.준공기한)}</td>
+    </tr>
+  </table>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    위와 같이 계약보증금을 납부합니다.
+  </p>
+  ${signArea(D.기관명, D.기관대표,
+    `납부자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== BOND CONFIRM =====
+function renderBondConfirm() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">계약보증금 지급확약서</div>
+  <table class="doc-table mt20">
+    <tr><td class="label-cell" style="width:130px;">계&nbsp;&nbsp;약&nbsp;&nbsp;명 :</td><td>${D.역명}</td></tr>
+    <tr><td class="label-cell">계&nbsp;약&nbsp;금&nbsp;액 :</td><td>${won(D.계약금액)}</td></tr>
+    <tr><td class="label-cell">계약보증금 :</td><td>${won(D.보증금액)}</td></tr>
+    <tr><td class="label-cell">계&nbsp;약&nbsp;기&nbsp;간 :</td><td>${fmtDateDot(D.착수일)} ~ ${fmtDateDot(D.준공기한)}</td></tr>
+  </table>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    위 계약을 체결함에 있어서 국가를 당사자로 하는 계약에 관한 법률 시행령 제50조에 의해 계약보증금 납부를 면제 받는바, 같은법 시행령 제51조에 따라 계약보증금 세입조치의 사유가 발생한 때에는 해당 계약보증금을 지체 없이 현금으로 납부할 것을 확약하며, 납부하지 않아 발생되는 모든 문제의 책임은 본인이 지겠습니다.
+  </p>
+  ${signArea(D.기관명, D.기관대표,
+    `확약자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== INTEGRITY =====
+function renderIntegrity() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">청 렴 서 약 서</div>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    ${D.역명}에 참여한 당사 대리인과 임직원은 ｢지방계약법｣ 제6조의 2에 따라 입찰(견적), 낙찰, 계약체결, 계약이행 과정에서 아래 각 호의 청렴서약 사항을 준수할 것이며, 이를 위반할 때에는 낙찰을 취소하거나 계약을 해제·해지하는 등의 모든 불이익을 감수하고, 이에 민·형사상 어떠한 이의도 제기하지 않을 것임을 서약합니다.
+  </p>
+  <div class="mt20">
+    <div class="num-item">1. 관계 공무원에게 직접 또는 간접적인 사례(謝禮), 증여, 금품·향응을 제공하지 않을 것이며, 이를 위반하면 ｢지방계약법｣ 제31조 제1항 제7호에 따른 부정당업자의 입찰참가자격 제한 처분을 받겠습니다.</div>
+    <div class="num-item">2. 특정인의 낙찰을 위한 담합 등 입찰의 자유경쟁을 방해하는 행위나 불공정한 행위 시에는 ｢지방계약법｣ 제31조 제1항 제2호에 따른 부정당업자의 입찰참가자격 제한 처분을 받겠습니다.</div>
+    <div class="num-item">3. 관련 법령에 따른 계약이행, 품질관리, 노무 및 안전관리 등을 성실히 이행하겠습니다.</div>
+    <div class="num-item">4. 위 각 호의 청렴서약사항을 위반한 경우에는 관계 법령에 따른 일체의 불이익을 감수하겠습니다.</div>
+  </div>
+  ${signArea(D.기관명, D.기관대표,
+    `서약자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== CONTRACT MEMO =====
+function renderContractMemo() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">각 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 서</div>
+  <table class="doc-table mt20">
+    <tr>
+      <td class="label-cell" style="width:80px;">업체명</td><td>${D.업체명}</td>
+      <td class="label-cell" style="width:80px;">소재지</td><td>${D.업체주소}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">대표자</td><td>${D.업체대표}</td>
+      <td class="label-cell">업종(등록)</td><td>${D.업종}</td>
+    </tr>
+  </table>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    상기 본인(법인)은 귀 기관과 수의계약을 체결함에 있어서 붙임 배제사유 중 어느 사유에도 해당되지 않으며, 차후에 이러한 사실이 발견된 경우 계약의 해제·해지 및 부정당업자 제재처분을 받아도 하등의 이유를 제기하지 않겠습니다.
+  </p>
+  <p class="bold mt20">&lt;수의계약 배제사유&gt;</p>
+  <div class="mt10 small">
+    <div class="num-item">① 견적서 제출 마감일 현재 부도·파산·해산·영업정지 등이 확정된 경우</div>
+    <div class="num-item">② 견적서 제출 마감일 현재 국가기관 등에 의하여 입찰참가자격이 정지된 경우</div>
+    <div class="num-item">③ 견적서 제출 마감일 전 최근 2년 이내에 부정당업자로 2회 이상 제재를 받은 자</div>
+    <div class="num-item">④ 계약담당자 또는 계약담당자가 지정하는 자의 업무방해, 사기 등의 행위를 한 자</div>
+    <div class="num-item">⑤ 기타 관계법령에 의하여 수의계약 체결이 제한된 경우</div>
+  </div>
+  ${signArea(D.기관명, D.기관대표,
+    `각서인 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== CONTRACT CHECK =====
+function renderContractCheck() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title" style="font-size:15pt;">수의계약 체결 제한 여부 확인서</div>
+  <p class="small mt10">• 해당하는 [ ]에 √ 표시를 합니다.</p>
+  <table class="doc-table mt10">
+    <tr>
+      <td class="label-cell" style="width:80px;">발주자</td>
+      <td class="label-cell" style="width:100px;">발주기관</td><td>${D.기관명}</td>
+      <td class="label-cell" style="width:80px;">발주날짜</td><td>${fmtDateDot(D.계약일)}</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td colspan="4">발주내용 : ${D.역명} &nbsp;&nbsp; [ ] 공사 &nbsp; [ ] 용역 &nbsp; [ ] 물품 &nbsp; [ ] 기타</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td colspan="4">수의계약 사유 :</td>
+    </tr>
+    <tr>
+      <td class="label-cell">계약상대자<br>(확인인)</td>
+      <td class="label-cell">성명</td><td>${D.업체대표} &nbsp;&nbsp;&nbsp; 소속: ${D.업체명} &nbsp;&nbsp;&nbsp; [ ] 개인 [ ] 법인</td>
+      <td class="label-cell">연락처</td><td>${D.전화}</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td class="label-cell">주소</td>
+      <td colspan="3">${D.업체주소}</td>
+    </tr>
+  </table>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    상기 본인은 「지방자치단체를 당사자로 하는 계약에 관한 법률」 시행령 제30조의2에 따른 수의계약 체결 제한 여부를 확인하였으며, 아래 제한사유에 해당되지 아니함을 확인합니다.
+  </p>
+  ${signArea(D.기관명, D.기관대표,
+    `확인자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== TAX =====
+function renderTax() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title" style="font-size:13pt; letter-spacing:2px;">지방자치단체를 당사자로 하는 계약에 관한 법률<br>제31조의5 및 동법 시행령 제93조에 따른 서약서</div>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    당사는 「지방계약법」 제31조의5에 따른 조세포탈 등을 한 자가 아님을 서약합니다. 만일 다음 각 호의 사유에 해당되어 유죄판결이 확정된 날부터 2년이 지나지 않는 사실이 발견된 때에는 계약을 해제·해지하는 등의 불이익을 감수하겠으며, 「지방계약법 시행령」 제93조에 따라 부정당업자의 입찰참가자격제한 처분을 받겠습니다.
+  </p>
+  <div class="mt20">
+    <div class="num-item">1. 「조세범 처벌법」 제3조제1항에 따른 조세포탈</div>
+    <div class="num-item">2. 「조세범 처벌법」 제10조에 따른 세금계산서의 발급의무 위반</div>
+    <div class="num-item">3. 「조세범 처벌법」 제11조에 따른 명의대여 행위</div>
+  </div>
+  <table class="doc-table mt20">
+    <tr><td class="label-cell" style="width:130px;">용&nbsp;&nbsp;역&nbsp;&nbsp;명</td><td>${D.역명}</td></tr>
+    <tr><td class="label-cell">업&nbsp;&nbsp;체&nbsp;&nbsp;명</td><td>${D.업체명}</td></tr>
+    <tr><td class="label-cell">대&nbsp;&nbsp;표&nbsp;&nbsp;자</td><td>${D.업체대표}</td></tr>
+    <tr><td class="label-cell">주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소</td><td>${D.업체주소}</td></tr>
+  </table>
+  ${signArea(D.기관명, D.기관대표,
+    `서약자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== PRIVACY =====
+function renderPrivacy() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title" style="font-size:14pt;">표준 개인정보처리 위탁 계약서</div>
+  <p class="small mt10" style="text-indent:2em;">
+    본 표준 개인정보처리위탁 계약서는 「개인정보 보호법」제26조제1항에 따라 위탁계약에 있어 개인정보 처리에 관하여 문서로 정하여야 하는 최소한의 사항을 표준적으로 제시한 것입니다.
+  </p>
+  <p class="doc-body mt10" style="text-indent:2em;">
+    ${D.기관명}(이하 "위탁자"라 한다)과 계약상대자 ${D.업체대표}(이하 "수탁자"라 한다)는 "위탁자"의 개인정보 처리업무를 "수탁자"에게 위탁함에 있어 다음과 같은 내용으로 본 업무 위탁계약을 체결한다.
+  </p>
+  <div class="mt20">
+    <p class="bold">제1조 (목적)</p>
+    <p class="doc-body" style="text-indent:2em;">이 계약은 "위탁자"가 개인정보처리업무를 "수탁자"에게 위탁하고, "수탁자"는 이를 승낙하여 "수탁자"의 책임아래 성실하게 업무를 완성하도록 하는데 필요한 사항을 정함을 목적으로 한다.</p>
+    <p class="bold mt10">제2조 (위탁업무의 목적 및 범위)</p>
+    <p class="doc-body" style="text-indent:2em;">"위탁자"는 ${D.역명}과 관련한 업무처리를 위하여 필요한 최소한의 범위 내에서 개인정보 처리를 "수탁자"에게 위탁한다.</p>
+    <p class="bold mt10">제3조 (재위탁 제한)</p>
+    <p class="doc-body" style="text-indent:2em;">"수탁자"는 "위탁자"의 사전 승낙 없이 개인정보의 처리를 제3자에게 재위탁할 수 없다.</p>
+    <p class="bold mt10">제4조 (개인정보의 안전성 확보조치)</p>
+    <p class="doc-body" style="text-indent:2em;">"수탁자"는 개인정보의 안전성 확보를 위하여 「개인정보 보호법」 제29조에 따른 안전성 확보에 필요한 기술적·관리적 및 물리적 조치를 하여야 한다.</p>
+  </div>
+  ${signArea(D.기관명, D.기관대표,
+    `수탁자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== LABOR RIGHTS =====
+function renderLabor() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title" style="font-size:14pt;">근로자 권리보호 이행서약서</div>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    당사는 ${D.기관명}(학교)에서 시행하는 ${D.역명} 계약업체로서 근로자(하도급업체 포함)의 인권보호·고용안정·노동환경 등의 권리보호를 위해 다음 사항을 이행할 것을 서약합니다.
+  </p>
+  <div class="mt20">
+    <div class="num-item">1. 당사는 근로자가 인간으로서의 존엄과 가치 및 자유와 권리를 누릴 수 있도록 인권보호를 위한 경영정책을 확립하도록 노력하겠습니다.</div>
+    <div class="num-item">2. 근로자에 대하여 인종·종교·신체적 결함·성별·출생지·노동조합 가입여부 등의 이유로 고용·보상·훈련의 기회, 승진, 이직, 퇴직 등에 차별을 하거나 조장하지 않겠습니다.</div>
+    <div class="num-item">3. 안전시설, 휴게실 등을 설치하여 근로자의 노동환경을 개선하고, 작업과 관련한 사고나 질병을 예방하기 위해 적절한 조치를 취하겠습니다.</div>
+    <div class="num-item">4. 근로자에게 노동력 착취적인 언어·신체적 접촉과 성적 강압 등의 행위를 허용하지 않고 근로자의 개인정보나 사생활에 대한 권리를 존중하겠습니다.</div>
+    <div class="num-item">5. 근로자에게 관련 규정에 부합한 노동시간 준수 및 휴일 제공으로 근로자 자신과 가족이 건강한 생활수준을 누릴 수 있게 하겠습니다.</div>
+    <div class="num-item">6. 당사는 근로 중 근로자에게 발생한 문제에 대하여 「근로기준법」, 「산업재해보상보험법」, 「국민건강보험법」 등 관련 법령을 준수하겠습니다.</div>
+  </div>
+  ${signArea(D.기관명, D.기관대표,
+    `서약자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== SECURITY REP =====
+function renderSecurityRep() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">보안서약서(업체대표용)</div>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    본인은 ${fmtDate(D.착수일)} 부로 ${D.역명} 사업을 수행함에 있어 다음 사항을 준수할 것을 엄숙히 서약합니다.
+  </p>
+  <div class="mt20">
+    <div class="num-item">1. 본인은 ${D.역명} 관련 업무 중 알게 될 일체의 내용이 직무상 기밀 사항임을 인정한다.</div>
+    <div class="num-item">2. 본인은 이 기밀을 누설함이 국가안전보장 및 국가이익에 위해가 될 수 있음을 인식하여 업무수행 중 지득한 제반 기밀사항을 일체 누설하거나 공개하지 아니한다.</div>
+    <div class="num-item">3. 본인이 이 기밀을 누설하거나 관계 규정을 위반한 때에는 관련 법령 및 계약에 따라 어떠한 처벌 및 불이익도 감수한다.</div>
+    <div class="num-item">4. 본인은 재직 중은 물론 퇴직 후에도 직무상 알게 된 일체의 기밀 사항에 대하여 보안을 유지한다.</div>
+  </div>
+  <div class="sign-area mt30">
+    ${fmtDate(D.계약일)}<br><br>
+    업 체 명 : <span class="sign-line">${D.업체명}</span><br>
+    대 표 자 : <span class="sign-line">${D.업체대표}</span> <span class="seal-box">인</span><br><br>
+    위 내용을 확인함<br>
+    ${D.기관명} : <span class="sign-line">${D.기관대표}</span> <span class="seal-box">인</span>
+  </div>
+</div></div>`;
+}
+
+// ===== SECURITY STAFF =====
+function renderSecurityStaff() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">보안서약서(참여인력용)</div>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    본인은 ${fmtDate(D.착수일)} 부로 ${D.역명} 사업을 수행함에 있어 다음 사항을 준수할 것을 엄숙히 서약합니다.
+  </p>
+  <div class="mt20">
+    <div class="num-item">1. 본인은 ${D.역명}과 관련된 소관 업무가 기밀 사항임을 인정하고 제반 보안관계규정 및 지침을 성실히 준수한다.</div>
+    <div class="num-item">2. 본인은 이 기밀을 누설함이 이적행위가 됨을 명심하고 재직 중은 물론 퇴직 후에도 알게 된 모든 기밀사항을 일절 타인에게 누설하지 아니한다.</div>
+    <div class="num-item">3. 본인은 기밀을 누설한 때에는 아래의 관계법규에 따라 엄중한 처벌을 받을 것을 서약한다.</div>
+    <div class="num-item">4. 본인은 보안관련 사고 발생시 즉시 관련기관에 신고할 것을 서약한다.</div>
+  </div>
+  <table class="doc-table mt20">
+    <tr>
+      <th>소속</th><th>직위/직급</th><th>성명</th><th>서명</th>
+    </tr>
+    <tr><td style="height:40px;"></td><td></td><td></td><td></td></tr>
+    <tr><td style="height:40px;"></td><td></td><td></td><td></td></tr>
+    <tr><td style="height:40px;"></td><td></td><td></td><td></td></tr>
+  </table>
+  <div class="sign-area mt20">
+    ${fmtDate(D.계약일)}<br><br>
+    위 내용을 확인함<br>
+    ${D.기관명} : <span class="sign-line">${D.기관대표}</span> <span class="seal-box">인</span>
+  </div>
+</div></div>`;
+}
+
+// ===== START =====
+function renderStart() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">착 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 수 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 계</div>
+  <table class="doc-table mt30">
+    <tr><td class="label-cell" style="width:160px;">1. 용&nbsp;&nbsp;역&nbsp;&nbsp;명 :</td><td>${D.역명}</td></tr>
+    <tr><td class="label-cell">2. 계&nbsp;약&nbsp;금&nbsp;액 :</td><td>${won(D.계약금액)}</td></tr>
+    <tr><td class="label-cell">3. 계약연월일 :</td><td>${fmtDate(D.계약일)}</td></tr>
+    <tr><td class="label-cell">4. 착수연월일 :</td><td>${fmtDate(D.착수일)}</td></tr>
+    <tr><td class="label-cell">5. 준공기&nbsp;&nbsp;&nbsp;한 :</td><td>${fmtDate(D.준공기한)}</td></tr>
+  </table>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    위와 같이 착수하였음을 계합니다.
+  </p>
+  ${signArea(D.기관명, D.기관대표,
+    `계약업체 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== LABOR AGREE =====
+function renderLaborAgree() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title" style="font-size:13pt; letter-spacing:2px;">「단순노무용역 노무비 구분관리 및 지급확인제」합의서</div>
+  <table class="doc-table mt20">
+    <tr><td class="label-cell" style="width:130px;">용&nbsp;&nbsp;역&nbsp;&nbsp;명</td><td>${D.역명}</td></tr>
+    <tr>
+      <td class="label-cell" rowspan="2">계&nbsp;약<br>상대자</td>
+      <td>상호 및 대표자 : ${D.업체명} &nbsp;&nbsp; 대표 ${D.업체대표}</td>
+    </tr>
+    <tr><td>영업소 소재지 : ${D.업체주소}</td></tr>
+  </table>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    위 용역에 대한 「노무비 구분관리 및 지급확인제」 운영을 위해 다음 사항을 합의하고, 합의사항을 성실히 이행할 것을 확약합니다.
+  </p>
+  <div class="mt10">
+    <div class="num-item">1. 계약상대자는 노무비를 구분하여 관리하고, 근로자에게 직접 지급하여야 한다.</div>
+    <div class="num-item">2. 계약상대자는 노무비 지급 후 지급내역서를 발주기관에 제출하여야 한다.</div>
+    <div class="num-item">3. 발주기관은 노무비 지급여부를 확인하고, 미지급시 계약을 해지할 수 있다.</div>
+  </div>
+  <table class="doc-table mt20">
+    <tr>
+      <th>청구일</th><th>지급기일</th><th>은행명</th><th>계좌번호</th><th>비고</th>
+    </tr>
+    <tr>
+      <td style="height:35px;"></td><td></td>
+      <td>${D.은행}</td><td>${D.계좌}</td><td></td>
+    </tr>
+  </table>
+  ${signArea(D.기관명, D.기관대표,
+    `계약상대자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== LABOR EXCLUDE =====
+function renderLaborExclude() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title" style="font-size:13pt; letter-spacing:1px;">「단순노무용역 노무비 구분관리 및 지급확인제」<br>적용 제외 확인서</div>
+  <table class="doc-table mt20">
+    <tr><td class="label-cell" style="width:130px;">용&nbsp;&nbsp;역&nbsp;&nbsp;명</td><td>${D.역명}</td></tr>
+    <tr>
+      <td class="label-cell" rowspan="2">계&nbsp;약<br>상대자</td>
+      <td>상호 및 대표자 : ${D.업체명} &nbsp;&nbsp; 대표 ${D.업체대표}</td>
+    </tr>
+    <tr><td>영업소 소재지 : ${D.업체주소}</td></tr>
+    <tr>
+      <td class="label-cell">적용 제외 사유</td>
+      <td>◦ 직접노무비 지급대상이 계약상대자의 상용근로자만으로 구성된 용역임</td>
+    </tr>
+  </table>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    본 용역은 위 사유로「노무비 구분관리제 및 지급확인제」적용이 제외되어 확인서류를 제출하며, 해당 용역의 노무비 체불 또는 미지급 건이 확인될 경우 처분청 통보 및 형사고발 등의 행정조치에 이의를 제기하지 않겠습니다.
+  </p>
+  ${signArea(D.기관명, D.기관대표,
+    `확인자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== LABOR MGMT =====
+function renderLaborMgmt() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title" style="font-size:13pt; letter-spacing:1px;">「단순노무용역 노무비 구분관리제」<br>적용 제외 확인서</div>
+  <table class="doc-table mt20">
+    <tr><td class="label-cell" style="width:130px;">용&nbsp;&nbsp;역&nbsp;&nbsp;명</td><td>${D.역명}</td></tr>
+    <tr>
+      <td class="label-cell" rowspan="2">계&nbsp;약<br>상대자</td>
+      <td>상호 및 대표자 : ${D.업체명} &nbsp;&nbsp; 대표 ${D.업체대표}</td>
+    </tr>
+    <tr><td>영업소 소재지 : ${D.업체주소}</td></tr>
+    <tr>
+      <td class="label-cell">적용 제외 사유</td>
+      <td>
+        ◦ 청구기일 전에 근로자 전원에게 노무비 지급<br>
+        ◦ 계약 기간이 1개월 미만인 용역<br>
+        ◦ 기타 사유
+      </td>
+    </tr>
+  </table>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    본 용역은 위 사유로「노무비 구분관리제」적용이 제외되어 확인서류를 제출하며, 해당 용역의 노무비 체불 또는 미지급 건이 확인될 경우 처분청 통보 및 형사고발 등의 행정조치에 이의를 제기하지 않겠습니다.
+  </p>
+  ${signArea(D.기관명, D.기관대표,
+    `확인자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== LABOR PAY =====
+function renderLaborPay() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title" style="font-size:14pt;">용역 종사자 노무비 지급 내역서(전월)</div>
+  <table class="doc-table mt20">
+    <tr><td class="label-cell" style="width:150px;">□ 용&nbsp;&nbsp;역&nbsp;&nbsp;명 :</td><td colspan="3">${D.역명}</td></tr>
+    <tr>
+      <td class="label-cell">○ 계약기간 :</td>
+      <td colspan="3">${fmtDateDot(D.착수일)} ~ ${fmtDateDot(D.준공기한)}</td>
+    </tr>
+  </table>
+  <table class="doc-table mt10">
+    <tr>
+      <th>성 명</th><th>전화번호</th><th colspan="2">계 좌 번 호</th><th>지 급 액(원)</th><th>지급일자</th>
+    </tr>
+    <tr><td style="height:40px;"></td><td></td><td colspan="2"></td><td></td><td></td></tr>
+    <tr><td style="height:40px;"></td><td></td><td colspan="2"></td><td></td><td></td></tr>
+    <tr><td style="height:40px;"></td><td></td><td colspan="2"></td><td></td><td></td></tr>
+    <tr><td style="height:40px;"></td><td></td><td colspan="2"></td><td></td><td></td></tr>
+    <tr><td class="label-cell" colspan="4">합 계</td><td></td><td></td></tr>
+  </table>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    위와 같이 노무비를 지급하였음을 확인합니다.
+  </p>
+  ${signArea(D.기관명, D.기관대표,
+    `확인자 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== SECURITY END =====
+function renderSecurityEnd() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">보안확약서(사업종료시)</div>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    본인은 ${D.역명} 사업의 제반자료, 장비, 서류, 중간·최종 산출물 등 용역과 관련된 모든 제반자료 등에 대하여 다음과 같이 이행하였음을 확약합니다.
+  </p>
+  <div class="mt20">
+    <div class="num-item">1. 용역사업(업무) 관련한 모든 제반자료 반환</div>
+    <div class="num-item">2. 용역사업(업무) 관련한 저장매체 내 자료 삭제</div>
+    <div class="num-item">3. 용역사업(업무) 관련한 사업산출물 복사본 등을 별도 보관하지 않음</div>
+    <div class="num-item">4. 기타 보안 관련 의무사항 이행 완료</div>
+  </div>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    위 사항을 위반할 경우 관련 법령 및 계약에 따라 어떠한 처벌 및 불이익도 감수하겠습니다.
+  </p>
+  <div class="sign-area mt30">
+    ${fmtDate(D.실제준공일)}<br><br>
+    업 체 명 : <span class="sign-line">${D.업체명}</span><br>
+    대 표 자 : <span class="sign-line">${D.업체대표}</span> <span class="seal-box">인</span><br><br>
+    위 내용을 확인함<br>
+    ${D.기관명} : <span class="sign-line">${D.기관대표}</span> <span class="seal-box">인</span>
+  </div>
+</div></div>`;
+}
+
+// ===== COMPLETE =====
+function renderComplete() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">완 수 확 인 서</div>
+  <table class="doc-table mt30">
+    <tr><td class="label-cell" style="width:130px;">용&nbsp;&nbsp;역&nbsp;&nbsp;명</td><td colspan="3">${D.역명}</td></tr>
+    <tr>
+      <td class="label-cell">계&nbsp;&nbsp;약&nbsp;&nbsp;자</td>
+      <td colspan="3">${D.업체명} &nbsp;&nbsp; 대표 ${D.업체대표}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">계약금액</td>
+      <td colspan="3">${won(D.계약금액)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">계&nbsp;&nbsp;약&nbsp;&nbsp;일</td><td>${fmtDateDot(D.계약일)}</td>
+      <td class="label-cell">완료기한</td><td>${fmtDateDot(D.준공기한)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">착&nbsp;&nbsp;수&nbsp;&nbsp;일</td><td>${fmtDateDot(D.착수일)}</td>
+      <td class="label-cell">완&nbsp;&nbsp;료&nbsp;&nbsp;일</td><td>${fmtDateDot(D.실제준공일)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">완료검사일</td>
+      <td colspan="3">${fmtDateDot(D.준공검사일)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">검 수 의 견</td>
+      <td colspan="3" style="height:60px;"></td>
+    </tr>
+  </table>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    위 용역을 완수하였음을 확인합니다.
+  </p>
+  <div class="sign-area mt30">
+    ${fmtDate(D.준공검사일)}<br><br>
+    검&nbsp;사&nbsp;자 : <span class="sign-line">${D.검사자}</span> <span class="seal-box">인</span><br>
+    ${D.기관명} : <span class="sign-line">${D.기관대표}</span> <span class="seal-box">인</span>
+  </div>
+</div></div>`;
+}
+
+// ===== PAYMENT =====
+function renderPayment() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title">대 &nbsp;&nbsp;&nbsp; 금 &nbsp;&nbsp;&nbsp; 청 &nbsp;&nbsp;&nbsp; 구 &nbsp;&nbsp;&nbsp; 서</div>
+  <table class="doc-table mt30">
+    <tr><td class="label-cell" style="width:160px;">1. 계&nbsp;약&nbsp;건&nbsp;명 :</td><td>${D.역명}</td></tr>
+    <tr><td class="label-cell">2. 계&nbsp;약&nbsp;금&nbsp;액 :</td><td>${won(D.계약금액)}</td></tr>
+    <tr><td class="label-cell">3. 준&nbsp;공&nbsp;금&nbsp;액 :</td><td>${won(D.계약금액)}</td></tr>
+    <tr><td class="label-cell">4. 기&nbsp;지&nbsp;급&nbsp;액 :</td><td>금 0 원 (금 영 원정)</td></tr>
+    <tr><td class="label-cell">5. 청 구 금 액 :</td><td>${won(D.계약금액)}</td></tr>
+    <tr><td class="label-cell">6. 계약이행기간 :</td><td>${fmtDateDot(D.착수일)} ~ ${fmtDateDot(D.실제준공일)}</td></tr>
+    <tr><td class="label-cell">7. 입&nbsp;금&nbsp;계&nbsp;좌 :</td><td>${D.은행} ${D.계좌}</td></tr>
+    <tr><td class="label-cell">8. 사업자등록번호 :</td><td>${D.사업자번호}</td></tr>
+  </table>
+  <p class="doc-body mt20" style="text-indent:2em;">
+    위와 같이 대금을 청구합니다.
+  </p>
+  ${signArea(D.기관명, D.기관대표,
+    `청구인 : <span class="sign-line">${D.업체명} 대표 ${D.업체대표}</span> <span class="seal-box">인</span>`)}
+</div></div>`;
+}
+
+// ===== 중대재해 DATA =====
+const S = {
+  학교명: '경기중학교',
+  고유번호: '123-45-00000',
+  학교대표: '김OO',
+  학교주소: '경기도 화성시 00로 00길 000',
+  계약명: '00중 논슬립 교체 공사',
+  계약체결일: '2025-00-00',
+  계약금액s: '15,600,000',
+  계약시작: '2025-00-00',
+  계약종료: '2025-00-00',
+  담당자직: '행정O급',
+  담당자명: '고OO',
+  업체명s: '㈜OO기업',
+  업체사업자: '165-71-00000',
+  업체대표s: '김OO',
+  업체주소s: '경기도 수원시 OO로 138길',
+  업체전화: '031-000-0000',
+  안전담당직: '대리',
+  안전담당명: '박OO',
+  안전담당전화: '010-0000-0000',
+};
+
+function gs(key) { return S[key] || ''; }
+
+function checkRow(num, content, yes='O', no='', note='') {
+  return `<tr>
+    <td class="center" style="width:40px;">${num}</td>
+    <td>${content}</td>
+    <td class="center" style="width:50px;">${yes}</td>
+    <td class="center" style="width:50px;">${no}</td>
+    <td style="width:80px;">${note}</td>
+  </tr>`;
+}
+
+// ===== 중대재해 PAGES =====
+// safe_input 제거 - 데이터 입력이 메인 input 폼으로 통합됨
+pages.safe_plan = { title: '1. 안전보건관리계획서', render: renderSafePlan };
+pages.safe_eval = { title: '2. 수급인 안전보건 수준평가표', render: renderSafeEval };
+pages.safe_meeting = { title: '3. 안전보건협의체 회의록', render: renderSafeMeeting };
+pages.safe_check = { title: '4. 도급(용역)안전보건 점검표', render: renderSafeCheck };
+pages.safe_high = { title: '5. 안전보건 점검표(고소작업)', render: renderSafeHigh };
+pages.safe_fire = { title: '6. 안전보건 점검표(화기작업)', render: renderSafeFire };
+pages.safe_confined = { title: '7. 안전보건 점검표(밀폐공간작업)', render: renderSafeConfined };
+pages.safe_elec = { title: '8. 안전보건 점검표(전기작업)', render: renderSafeElec };
+pages.safe_patrol = { title: '9. 작업장 순회점검표', render: renderSafePatrol };
+pages.safe_joint = { title: '10. 작업장 합동 안전·보건점검표', render: renderSafeJoint };
+
+function renderSafeInput() {
+  return `
+  <form oninput="updateSafeData()" onsubmit="return false;">
+  <div class="input-section" style="background:#fffde7; border:1px solid #f9a825;">
+    <h3 style="color:#b45309;">⚠ 중대재해처벌법 안전서류 입력 정보</h3>
+    <p style="font-size:11px; color:#666; margin-bottom:12px;">아래 정보를 입력하면 10가지 안전서류가 자동 생성됩니다.</p>
+  </div>
+  <div class="input-section">
+    <h3>1. 학교(기관) 기본사항</h3>
+    <div class="input-grid">
+      <div class="field highlight"><label>학교명</label><input id="s_학교명" value="${S.학교명}"></div>
+      <div class="field"><label>고유번호</label><input id="s_고유번호" value="${S.고유번호}"></div>
+      <div class="field"><label>학교 대표자</label><input id="s_학교대표" value="${S.학교대표}"></div>
+      <div class="field"><label>학교 주소</label><input id="s_학교주소" value="${S.학교주소}"></div>
+      <div class="field highlight"><label>계약명</label><input id="s_계약명" value="${S.계약명}"></div>
+      <div class="field"><label>계약체결일</label><input id="s_계약체결일" value="${S.계약체결일}"></div>
+      <div class="field"><label>계약금액</label><input id="s_계약금액s" value="${S.계약금액s}"></div>
+      <div class="field"><label>계약기간 시작</label><input id="s_계약시작" value="${S.계약시작}"></div>
+      <div class="field"><label>계약기간 종료</label><input id="s_계약종료" value="${S.계약종료}"></div>
+      <div class="field"><label>계약담당자 직위</label><input id="s_담당자직" value="${S.담당자직}"></div>
+      <div class="field"><label>계약담당자 성명</label><input id="s_담당자명" value="${S.담당자명}"></div>
+    </div>
+  </div>
+  <div class="input-section">
+    <h3>2. 계약업체 사항</h3>
+    <div class="input-grid">
+      <div class="field highlight"><label>업체명</label><input id="s_업체명s" value="${S.업체명s}"></div>
+      <div class="field"><label>사업자등록번호</label><input id="s_업체사업자" value="${S.업체사업자}"></div>
+      <div class="field"><label>업체 대표자</label><input id="s_업체대표s" value="${S.업체대표s}"></div>
+      <div class="field"><label>업체 주소</label><input id="s_업체주소s" value="${S.업체주소s}"></div>
+      <div class="field"><label>업체 대표전화</label><input id="s_업체전화" value="${S.업체전화}"></div>
+      <div class="field"><label>안전담당자 직위</label><input id="s_안전담당직" value="${S.안전담당직}"></div>
+      <div class="field"><label>안전담당자 성명</label><input id="s_안전담당명" value="${S.안전담당명}"></div>
+      <div class="field"><label>안전담당자 전화</label><input id="s_안전담당전화" value="${S.안전담당전화}"></div>
+    </div>
+  </div>
+  </form>`;
+}
+
+function updateSafeData() {
+  const fields = ['학교명','고유번호','학교대표','학교주소','계약명','계약체결일','계약금액s',
+    '계약시작','계약종료','담당자직','담당자명','업체명s','업체사업자','업체대표s',
+    '업체주소s','업체전화','안전담당직','안전담당명','안전담당전화'];
+  fields.forEach(k => {
+    const el = document.getElementById('s_'+k);
+    if (el) S[k] = el.value;
+  });
+}
+
+function safeHeader(title, note='') {
+  return `
+  ${note ? `<p class="small mb10" style="color:#555;">${note}</p>` : ''}
+  <div class="doc-title" style="font-size:15pt;">${title}</div>
+  <table class="doc-table mt10">
+    <tr>
+      <td class="label-cell" style="width:110px;">학교(기관)명</td><td>${S.학교명}</td>
+      <td class="label-cell" style="width:80px;">결재</td>
+      <td class="center" style="width:70px; font-size:9pt;">담당자<br><br>${S.담당자명}</td>
+      <td class="center" style="width:70px; font-size:9pt;">행정실장<br><br></td>
+      <td class="center" style="width:70px; font-size:9pt;">학교장<br><br></td>
+    </tr>
+    <tr>
+      <td class="label-cell">사&nbsp;&nbsp;업&nbsp;&nbsp;명</td>
+      <td colspan="5">${S.계약명}</td>
+    </tr>
+  </table>`;
+}
+
+function safeSign() {
+  return `
+  <div class="sign-area mt30">
+    ${S.계약체결일}<br><br>
+    ${S.학교명} &nbsp; ${S.담당자직} ${S.담당자명} <span class="seal-box">인</span><br>
+    ${S.업체명s} &nbsp; ${S.안전담당직} ${S.안전담당명} <span class="seal-box">인</span>
+  </div>`;
+}
+
+function renderSafePlan() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <p class="small mb10">「산업안전보건법」제61조 및「중대재해처벌법 시행령」제4조제9항에 따라 도급사업 시 적격 수급업체선정을 위해 귀사가 제출한 안전보건관리계획서에 따라 안전보건 관리수준을 평가하므로 성실히 작성하여 주시기 바랍니다.</p>
+  <div class="doc-title">안전보건관리계획서</div>
+  <table class="doc-table mt10">
+    <tr><td class="label-cell" colspan="2">일반사항</td></tr>
+    <tr><td class="label-cell" style="width:180px;">□ 도급·용역·위탁사업 현황</td><td></td></tr>
+    <tr><td style="padding-left:16px;">1. 학교(기관)명:</td><td>${S.학교명}</td></tr>
+    <tr><td style="padding-left:16px;">2. 작업(계약)명:</td><td>${S.계약명}</td></tr>
+    <tr><td style="padding-left:16px;">3. 업체명:</td><td>${S.업체명s}</td></tr>
+    <tr><td style="padding-left:16px;">4. 현장책임자:</td><td>${S.안전담당명}</td></tr>
+    <tr><td style="padding-left:16px;">5. 연락처:</td><td>${S.안전담당전화}</td></tr>
+    <tr><td class="label-cell" colspan="2">□ 계약현황</td></tr>
+    <tr><td style="padding-left:16px;">1. 계약금액:</td><td>${S.계약금액s} 원</td></tr>
+    <tr><td style="padding-left:16px;">2. 계약기간:</td><td>${S.계약시작} ~ ${S.계약종료}</td></tr>
+  </table>
+  <table class="doc-table mt10">
+    <tr><td class="label-cell" colspan="4">안전보건관리체계</td></tr>
+    <tr>
+      <td style="width:200px; padding-left:8px;">□ 작성자</td>
+      <td>업체명: ${S.업체명s}</td>
+      <td>성명: ${S.업체대표s}</td>
+      <td style="width:80px;">(서명)</td>
+    </tr>
+    <tr>
+      <td style="padding-left:8px;">□ 안전보건 관리 인력 계획</td>
+      <td colspan="3">◦ 안전담당: ${S.안전담당명}</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td colspan="3">◦ 작업전 현장점검, 유해·위험요인 점검, 작업장 통제</td>
+    </tr>
+    <tr>
+      <td style="padding-left:8px;">□ 안전점검 계획</td>
+      <td colspan="3" style="white-space:pre-wrap;">◦ 작업절차: 기술 내용 작성
+◦ 안전점검계획: 작업장 주변 통제, 유해·위험기구 점검</td>
+    </tr>
+    <tr>
+      <td style="padding-left:8px;">□ 보호구 및 방호장치계획</td>
+      <td colspan="3">◦ 안전화, 보안경, 회전체덮개 등</td>
+    </tr>
+    <tr>
+      <td style="padding-left:8px;">□ 비상조치 계획</td>
+      <td colspan="3">◦ 산업재해 발생 → 작업중지 → 초기대응 → 재해자 응급처치 및 신고<br>
+      ◦ 소방서: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 병원: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 관할 고용노동부:</td>
+    </tr>
+    <tr>
+      <td class="label-cell" colspan="4">안전보건관리 실행 수준</td>
+    </tr>
+    <tr>
+      <td style="padding-left:8px;">□ 작업 중 유해·위험요인에 대한 관리계획</td>
+      <td colspan="3">◦ 유해·위험요인: 작성<br>◦ 관리계획: 작성</td>
+    </tr>
+    <tr>
+      <td style="padding-left:8px;">□ 안전보건 교육 계획</td>
+      <td colspan="3">◦ 작업전 기계·기구 사용시 주의사항 및 안전수칙 준수교육</td>
+    </tr>
+    <tr>
+      <td class="label-cell" colspan="4">재해발생 수준</td>
+    </tr>
+    <tr>
+      <td style="padding-left:8px;">□ 산업재해 발생 현황</td>
+      <td colspan="3">최근 2년간 산업재해 발생 건수: &nbsp;&nbsp;&nbsp;&nbsp; 건</td>
+    </tr>
+  </table>
+  ${safeSign()}
+</div></div>`;
+}
+
+function renderSafeEval() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <p class="small mb10">※ 기관 형태 및 계약의 형태에 따라 변경 가능</p>
+  <div class="doc-title" style="font-size:15pt;">수급인 안전보건 수준 평가표</div>
+  <table class="doc-table mt10">
+    <tr>
+      <td class="label-cell" style="width:90px;">학교(기관)명</td><td>${S.학교명}</td>
+      <td class="label-cell" style="width:40px;" rowspan="3">결재</td>
+      <td class="center" style="width:70px;" rowspan="3">담당자<br><br>${S.담당자명}</td>
+      <td class="center" style="width:70px;" rowspan="3">행정실장<br><br></td>
+      <td class="center" style="width:70px;" rowspan="3">학교장<br><br></td>
+    </tr>
+    <tr>
+      <td class="label-cell">평가일시</td><td>2025-&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="label-cell">사&nbsp;&nbsp;업&nbsp;&nbsp;명</td><td>${S.계약명}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">업&nbsp;&nbsp;체&nbsp;&nbsp;명</td><td colspan="5">${S.업체명s}</td>
+    </tr>
+  </table>
+  <table class="doc-table mt10">
+    <tr>
+      <th style="width:110px;">구분</th>
+      <th style="width:160px;">평가항목 및 배점</th>
+      <th>평가내용 및 기준</th>
+      <th style="width:70px;">충족여부<br>(○,×)</th>
+      <th style="width:50px;">점수</th>
+    </tr>
+    <tr>
+      <td class="label-cell" rowspan="4">안전보건관리체계<br>(50)</td>
+      <td>안전보건 관리 인력구성 (10)</td>
+      <td>∘ 과업 추진을 위한 안전관리 인원의 배정 여부<br>∘ 안전담당을 배정 시 배점</td>
+      <td class="center">○</td><td class="center">10</td>
+    </tr>
+    <tr>
+      <td>안전점검계획 (10)</td>
+      <td>∘ 산업재해예방 활동에 대한 안전작업계획 및 안전점검 절차<br>∘ 체계적으로 계획을 수립 시 배점</td>
+      <td class="center">○</td><td class="center">10</td>
+    </tr>
+    <tr>
+      <td>보호구 및 방호장치 (20)</td>
+      <td>∘ 보호구 착용 여부 및 방호장치 설치 계획<br>∘ 체계적으로 계획을 수립 시 배점</td>
+      <td class="center">○</td><td class="center">15</td>
+    </tr>
+    <tr>
+      <td>비상조치 계획 (10)</td>
+      <td>∘ 비상상황 시 대피 및 피해 최소화 대책 (고용노동부, 소방서, 병원 포함)<br>∘ 비상상황 시 조치 계획을 수립 시 배점</td>
+      <td class="center">○</td><td class="center">10</td>
+    </tr>
+    <tr>
+      <td class="label-cell" rowspan="2">실행수준 (20)</td>
+      <td>위험성 평가 (10)</td>
+      <td>∘ 위험성평가에 대한 이해수준 및 자체 유해·위험요인 평가 계획<br>∘ 위험성평가 계획 수립 시 배점</td>
+      <td class="center">×</td><td class="center">0</td>
+    </tr>
+    <tr>
+      <td>안전보건교육 (10)</td>
+      <td>∘ 안전보건교육(또는 자체교육) 계획 (정기교육, 신규채용 시 교육)<br>∘ 법정안전보건교육을 준수하여 계획 수립 시 배점</td>
+      <td class="center">○</td><td class="center">10</td>
+    </tr>
+    <tr>
+      <td class="label-cell">재해발생 수준 (30)</td>
+      <td>산업재해 현황 (30)</td>
+      <td>∘ 최근 2년간 산업재해 발생 현황<br>∘ 배점한도 내에서 재해 건수 1건당 10점 감점<br>∘ 산재요양확인서 제출</td>
+      <td class="center">○</td><td class="center">20</td>
+    </tr>
+    <tr>
+      <td class="label-cell">총 점</td>
+      <td colspan="3"></td>
+      <td class="center bold">75</td>
+    </tr>
+    <tr>
+      <td class="label-cell">등급판단</td>
+      <td colspan="4">
+        <table style="width:100%; border-collapse:collapse; font-size:9pt;">
+          <tr>
+            <td style="padding:3px 6px;">0점: D</td>
+            <td style="padding:3px 6px;">60점: C</td>
+            <td style="padding:3px 6px;">70점: <strong>B ◀ 해당</strong></td>
+            <td style="padding:3px 6px;">80점: A</td>
+            <td style="padding:3px 6px;">90점: S</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+  ${safeSign()}
+</div></div>`;
+}
+
+function renderSafeMeeting() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <p class="small mb10">※ 작업일수 30일 이내 종료되는 사업, 연간 총 작업일수가 60일 이하의 간헐적 작업의 경우 안전보건협의체 운영하지 않아도 됨</p>
+  <div class="doc-title" style="font-size:15pt;">안전보건협의체 회의록</div>
+  <table class="doc-table mt10">
+    <tr>
+      <td class="label-cell" style="width:80px;">회의일시</td><td style="width:160px;">2025-&nbsp;&nbsp;-&nbsp;&nbsp;</td>
+      <td class="label-cell" style="width:40px;" rowspan="2">결재</td>
+      <td class="center" style="width:70px;" rowspan="2">담당자<br><br>${S.담당자명}</td>
+      <td class="center" style="width:70px;" rowspan="2">행정실장<br><br></td>
+      <td class="center" style="width:70px;" rowspan="2">학교장<br><br></td>
+    </tr>
+    <tr>
+      <td class="label-cell">회의장소</td>
+      <td>${S.학교명} 회의실</td>
+    </tr>
+  </table>
+  <table class="doc-table mt10">
+    <tr>
+      <td class="label-cell" style="width:80px; vertical-align:top; padding-top:8px;">협의사항</td>
+      <td style="line-height:2; font-size:10pt;">
+        1. 작업의 시작시간<br>
+        &nbsp;&nbsp;&nbsp;예) ${S.계약시작} 9:00 ~ ${S.계약명}<br>
+        2. 작업 또는 작업장 간의 연락방법<br>
+        &nbsp;&nbsp;&nbsp;${S.학교명}: ${S.업체전화}, ${S.업체명s} 담당자: ${S.안전담당명} ${S.안전담당전화}<br>
+        3. 재해발생 위험이 있는 경우 대피방법<br>
+        &nbsp;&nbsp;&nbsp;비상 시 비상계단을 이용하여 외부 이동<br>
+        4. 위험성평가의 실시에 관한 사항<br>
+        &nbsp;&nbsp;&nbsp;위험요인 및 안전대책 작성<br>
+        5. 사업주와 수급인 또는 수급인 상호 간의 연락방법 및 작업공정의 조정<br>
+        &nbsp;&nbsp;&nbsp;점검업체 담당자 ${S.안전담당명}, ${S.안전담당전화} 필요 시 유선 연락
+      </td>
+    </tr>
+    <tr>
+      <td class="label-cell">수급인 종사자의<br>안전·보건 관련<br>의견청취</td>
+      <td style="height:60px;"></td>
+    </tr>
+  </table>
+  <p class="bold mt10">참석자 확인</p>
+  <table class="doc-table mt10">
+    <tr>
+      <th>소속</th><th>직위</th><th>성명(서명)</th>
+      <th>소속</th><th>직위</th><th>성명(서명)</th>
+    </tr>
+    <tr>
+      <td>${S.학교명}</td><td>${S.담당자직}</td><td>${S.담당자명}(서명)</td>
+      <td>${S.업체명s}</td><td>${S.안전담당직}</td><td>${S.안전담당명}(서명)</td>
+    </tr>
+    <tr>
+      <td>${S.학교명}</td><td></td><td>(서명)</td>
+      <td>${S.업체명s}</td><td></td><td>(서명)</td>
+    </tr>
+    <tr>
+      <td>${S.학교명}</td><td></td><td>(서명)</td>
+      <td>${S.업체명s}</td><td></td><td>(서명)</td>
+    </tr>
+  </table>
+</div></div>`;
+}
+
+function renderSafeCheck() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <p class="small mb10">※ 학교(기관), 교육(지원)청에서 확인하여 자체 보관</p>
+  <div class="doc-title" style="font-size:15pt;">도급(용역) 안전보건 점검표</div>
+  <table class="doc-table mt10">
+    <tr>
+      <td class="label-cell" style="width:90px;">학교(기관)명</td><td>${S.학교명}</td>
+      <td class="label-cell" style="width:40px;" rowspan="4">결재</td>
+      <td class="center" style="width:70px;" rowspan="4">담당자<br><br>${S.담당자명}</td>
+      <td class="center" style="width:70px;" rowspan="4">행정실장<br><br></td>
+      <td class="center" style="width:70px;" rowspan="4">학교장<br><br></td>
+    </tr>
+    <tr><td class="label-cell">사&nbsp;&nbsp;업&nbsp;&nbsp;명</td><td>${S.계약명}</td></tr>
+    <tr><td class="label-cell">점검일자</td><td>2025-&nbsp;&nbsp;-&nbsp;&nbsp;</td></tr>
+    <tr><td class="label-cell">점&nbsp;&nbsp;검&nbsp;&nbsp;자</td><td>${S.담당자명} (서명)</td></tr>
+  </table>
+  <table class="doc-table mt10">
+    <tr>
+      <th style="width:40px;">번호</th>
+      <th>점검내용</th>
+      <th style="width:50px;">예</th>
+      <th style="width:60px;">아니오</th>
+    </tr>
+    <tr><td class="center">1</td><td>과업지시서(또는 특수조건) 또는 계약서에 '안전관리 및 예방조치 후 작업' 실시 내용 포함하였는지 확인<br><small>*계약서가 없을 경우 본 점검표로 갈음</small></td><td class="center">O</td><td></td></tr>
+    <tr><td class="center">2</td><td>도급(용역)업체에서 근로자에 대한 안전보건교육 실시하였는지 확인</td><td class="center">O</td><td></td></tr>
+    <tr><td class="center">3</td><td>도급(용역)업체에 안전보호구(안전모, 안전대, 안전화 등)를 착용하고 작업하도록 주지하였는지 확인(필요한 경우)</td><td class="center">O</td><td></td></tr>
+    <tr><td class="center">4</td><td>도급(용역)업체에 위험사항(위험성평가 등)과 기계·기구·설비의 안전점검에 관한 사항, 공사 전 유의사항에 대해 안내하여 주었는지 확인</td><td class="center">O</td><td></td></tr>
+    <tr><td class="center">5</td><td>도급(용역)업체에 최초 학교(기관)의 현장으로 이동할 때나 현장 이외 장소 이동 시 교육행정실(담당자)의 안내를 받도록 주지시켰는지 확인</td><td class="center">O</td><td></td></tr>
+    <tr><td class="center">6</td><td>고소, 전기, 화기, 밀폐공간 등의 작업 시 도급(용역)업체에서 유해·위험 작업 시 안전보건 점검표를 제출하였는지 여부</td><td class="center">O</td><td></td></tr>
+    <tr><td class="center">7</td><td>안전·보건에 관한 종사자의 의견청취를 하였는지 여부<br>- 의견제시사항:</td><td class="center">O</td><td></td></tr>
+  </table>
+  <p class="bold mt20">&lt;공사업체 확인서&gt;</p>
+  <p class="doc-body mt10" style="text-indent:2em;">위 점검사항에 대해 안내를 받았으며 산업안전보건법규에 따라 작업자에게 안전보건보호구 지급 및 안전수칙을 준수하여 작업할 것을 확인합니다.</p>
+  <div class="sign-area mt20">
+    소속(회사): <span class="sign-line">${S.업체명s}</span><br>
+    도급(용역)업체 책임자: <span class="sign-line">${S.안전담당명}</span> <span class="seal-box">인</span>
+  </div>
+</div></div>`;
+}
+
+function renderSafeHigh() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <p class="small mb10">※ 고소작업을 할 경우 해당업체에서 작성하여 제출</p>
+  <div class="doc-title" style="font-size:14pt;">유해·위험 작업 시 안전보건 점검표 [고소작업]</div>
+  <table class="doc-table mt10">
+    <tr><td class="label-cell" style="width:90px;">업&nbsp;&nbsp;체&nbsp;&nbsp;명</td><td>${S.업체명s}</td></tr>
+    <tr><td class="label-cell">사&nbsp;&nbsp;업&nbsp;&nbsp;명</td><td>${S.계약명}</td></tr>
+    <tr><td class="label-cell">점검일자</td><td>2025-&nbsp;&nbsp;-&nbsp;&nbsp;</td></tr>
+    <tr><td class="label-cell">점&nbsp;&nbsp;검&nbsp;&nbsp;자</td><td>${S.안전담당직} ${S.안전담당명} (서명)</td></tr>
+  </table>
+  <table class="doc-table mt10">
+    <tr><th style="width:40px;">번호</th><th>점검내용</th><th style="width:50px;">예</th><th style="width:60px;">아니오</th><th style="width:70px;">비고</th></tr>
+    <tr><td class="center">1</td><td>개인보호구(안전모, 안전화, 안전벨트 등) 지급 및 작업자의 착용 상태 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">2</td><td>추락위험이 있는 장소의 작업일 경우 2인 1조 작업계획 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">3</td><td>추락재해 관련 충분한 사전 안전성 검토 확인<br>(예- 작업구간이 지붕일 경우, 작업구간의 개구부 여부, 이동식비계 및 사다리 상태)</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">4</td><td>추락 위험이 있는 장소의 작업발판 또는 안전대 걸이 설치 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">5</td><td>로프 작업 시 안전조치 계획 확인 (로프 설치 시 2점 고정, 안전벨트 및 추락방지대 착용)</td><td></td><td></td><td>해당없음</td></tr>
+    <tr><td class="center">6</td><td>차량탑재형 고소작업대(스카이)를 사용 시 안전조치 계획 확인 (안전검사, 안전대 걸이, 아웃트리거 설치, 신호수 배치)</td><td></td><td></td><td>해당없음</td></tr>
+  </table>
+  <p class="small mt10">※ 해당사항이 없으면 점검결과란 '비고'에 표기</p>
+  <p class="bold mt10">&lt;안전보건 점검사항 및 조치사항(예시)&gt;</p>
+  <p class="small mt5">1) 사다리 작업: 개인보호구 착용(안전모, 안전벨트, 안전화), 전도방지대 설치, 2인1조 작업<br>
+  2) 이동식비계 작업: 개인보호구 착용, 안전난간대 설치, 전도방지대 설치<br>
+  3) 외부로프 작업: PP로프 점검, 로프 설치 시 2점 고정, 추락방지대 착용<br>
+  4) 차량탑재형 고소작업대 작업: 탑승대 안전난간 설치, 탑승자 안전대 걸이, 신호수 배치</p>
+</div></div>`;
+}
+
+function renderSafeFire() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <p class="small mb10">※ 화재위험이 있는 작업을 할 경우 해당업체에서 작성하여 제출</p>
+  <div class="doc-title" style="font-size:14pt;">유해·위험 작업 시 안전보건 점검표 [화기작업]</div>
+  <table class="doc-table mt10">
+    <tr><td class="label-cell" style="width:90px;">업&nbsp;&nbsp;체&nbsp;&nbsp;명</td><td>${S.업체명s}</td></tr>
+    <tr><td class="label-cell">사&nbsp;&nbsp;업&nbsp;&nbsp;명</td><td>${S.계약명}</td></tr>
+    <tr><td class="label-cell">점검일자</td><td>2025-&nbsp;&nbsp;-&nbsp;&nbsp;</td></tr>
+    <tr><td class="label-cell">점&nbsp;&nbsp;검&nbsp;&nbsp;자</td><td>${S.안전담당직} ${S.안전담당명} (서명)</td></tr>
+  </table>
+  <table class="doc-table mt10">
+    <tr><th style="width:40px;">번호</th><th>점검내용</th><th style="width:50px;">예</th><th style="width:60px;">아니오</th><th style="width:70px;">비고</th></tr>
+    <tr><td class="center">1</td><td>화재위험 작업 시 작업구역을 설정하여 표지판을 설치하고 통행로 및 출입제한 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">2</td><td>화재위험 작업 시 주변 가연성물질을 제거하고 주변 정리, 정돈 후 작업실시 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">3</td><td>화재위험 작업 시 충분한 사전 안전성 검토 후 근로자에게 피난방법 안내 및 안전교육 실시 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">4</td><td>화재위험 작업 시 화재 진압을 위한 소화기 비치 및 화재 감시자 배치 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">5</td><td>화재위험 작업 전 주변 인화성 액체·증기가 남아있지 않도록 환기 조치 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">6</td><td>용접·용단 작업 시 불꽃·불티 비산을 방지하기 위한 용접불티 비산방지덮개, 용접방화포 등 설치 확인</td><td></td><td></td><td>해당없음</td></tr>
+    <tr><td class="center">7</td><td>용접·용단 작업 시 개인보호구(보안면, 용접장갑 등)의 지급 및 작업자의 착용 상태 확인</td><td></td><td></td><td>해당없음</td></tr>
+  </table>
+  <p class="small mt10">※ 해당사항이 없으면 점검결과란 '비고'에 표기</p>
+  <p class="bold mt10">&lt;안전보건 점검사항 및 조치사항(예시)&gt;</p>
+  <p class="small mt5">1) 화기 작업: 내부 인화성 물질 제거, 인근 가연물 제거 철저 및 확인, 관계자 외 출입금지 표지판 설치, 감시인 배치<br>
+  2) 용접·용단 작업: 용접불티 비산방지 덮개, 용접 방화포 설치, 개인보호구 착용 철저<br>
+  3) 밀폐공간 내 화기 작업: 주변 인화성 물질 확인 작업 금지 철저, 환기설비를 가동 철저, 감시인 배치</p>
+</div></div>`;
+}
+
+function renderSafeConfined() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <p class="small mb10">※ 밀폐공간 작업 시 질식의 위험이 있는 작업을 할 경우 해당업체에서 작성하여 제출</p>
+  <div class="doc-title" style="font-size:14pt;">유해·위험 작업 시 안전보건 점검표 [밀폐공간작업]</div>
+  <table class="doc-table mt10">
+    <tr><td class="label-cell" style="width:90px;">업&nbsp;&nbsp;체&nbsp;&nbsp;명</td><td>${S.업체명s}</td></tr>
+    <tr><td class="label-cell">사&nbsp;&nbsp;업&nbsp;&nbsp;명</td><td>${S.계약명}</td></tr>
+    <tr><td class="label-cell">점검일자</td><td>2025-&nbsp;&nbsp;-&nbsp;&nbsp;</td></tr>
+    <tr><td class="label-cell">점&nbsp;&nbsp;검&nbsp;&nbsp;자</td><td>${S.안전담당직} ${S.안전담당명} (서명)</td></tr>
+  </table>
+  <table class="doc-table mt10">
+    <tr><th style="width:40px;">번호</th><th>점검내용</th><th style="width:50px;">예</th><th style="width:60px;">아니오</th><th style="width:70px;">비고</th></tr>
+    <tr><td class="center">1</td><td>작업 전 밀폐공간 해당여부와 사전 위험성 파악 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">2</td><td>밀폐공간 작업 시 무단출입 금지 및 출입구 "출입금지"표지 설치 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">3</td><td>밀폐공간 작업 시 질식재해 예방장비 보유 확인 (산소 및 유해가스 측정기, 환기팬, 호흡용 보호구 등)</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">4</td><td>작업 시작 전, 작업 중 산소 및 유해가스 농도 측정 확인<br><small>※ 적정공기: 산소 18%~23.5%, 탄산가스 1.5% 미만, 일산화탄소 30ppm 미만, 황화수소 10ppm 미만</small></td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">5</td><td>작업 시작 전, 작업 중 환기팬을 이용한 지속적인 환기 실시 상태 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">6</td><td>작업 시작 전 산소농도·유해가스 측정기, 환기팬, 호흡용 보호구, 안전대, 구명밧줄 등 사전 준비·점검·사용방법 숙지 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">7</td><td>밀폐공간 작업 시 호흡용 보호구 착용 상태 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">8</td><td>밀폐공간 작업 시 외부에 감시인 배치 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">9</td><td>밀폐공간 작업 시 긴급상황 대비 무전기 등 통신장비 구비 및 연락체계 수립 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">10</td><td>밀폐공간 작업 프로그램 수립 및 시행 확인</td><td class="center">O</td><td></td><td></td></tr>
+  </table>
+  <p class="small mt10">※ 해당사항이 없으면 점검결과란 '비고'에 표기</p>
+  <p class="bold mt10">&lt;밀폐공간이란?&gt;</p>
+  <p class="small mt5">물탱크, 맨홀, 피트, 하수관, 정화조, 침전조 등 환기가 불충분하여 산소결핍이나 유해가스 중독 등 질식위험이 있는 장소</p>
+</div></div>`;
+}
+
+function renderSafeElec() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <p class="small mb10">※ 전기작업 시 감전의 위험이 있는 작업을 할 경우 해당업체에서 작성하여 제출</p>
+  <div class="doc-title" style="font-size:14pt;">유해·위험 작업 시 안전보건 점검표 [전기작업]</div>
+  <table class="doc-table mt10">
+    <tr><td class="label-cell" style="width:90px;">업&nbsp;&nbsp;체&nbsp;&nbsp;명</td><td>${S.업체명s}</td></tr>
+    <tr><td class="label-cell">사&nbsp;&nbsp;업&nbsp;&nbsp;명</td><td>${S.계약명}</td></tr>
+    <tr><td class="label-cell">점검일자</td><td>2025-&nbsp;&nbsp;-&nbsp;&nbsp;</td></tr>
+    <tr><td class="label-cell">점&nbsp;&nbsp;검&nbsp;&nbsp;자</td><td>${S.안전담당직} ${S.안전담당명} (서명)</td></tr>
+  </table>
+  <table class="doc-table mt10">
+    <tr><th style="width:40px;">번호</th><th>점검내용</th><th style="width:50px;">예</th><th style="width:60px;">아니오</th><th style="width:70px;">비고</th></tr>
+    <tr><td class="center">1</td><td>전기·정전 위험작업 시 주전원 차단, 잠금장치 및 꼬리표(LOTO) 부착 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">2</td><td>전기기계·기구 및 배선 등의 모든 충전부 노출 시키지 않도록 조치 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">3</td><td>휴대형 또는 이동식 전기기계·기구(이동식 코드릴) 전원의 누전차단기 설치 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">4</td><td>전기·정전 작업 시 배선, 이동전선 등 절연전선의 피복이 손상되지 않도록 충분한 절연 조치되었는지 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">5</td><td>전기위험 작업 시 물기 있는 곳에서 취급 금지토록 조치되었는지 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">6</td><td>전기기계·기구 등 설치·해체·정비·점검 작업 시 자격, 면허를 가진 유자격자의 작업수행 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">7</td><td>전기위험 작업 시 절연용 보호구(절연화, 절연장갑 등) 지급 및 작업자 착용 상태 확인</td><td class="center">O</td><td></td><td></td></tr>
+  </table>
+  <p class="small mt10">※ 해당사항이 없으면 점검결과란 '비고'에 표기</p>
+  <p class="bold mt10">&lt;LOTO란?&gt;</p>
+  <p class="small mt5">정비 등의 작업 시의 운전정지 (Lock Out, Tag Out) — 기계 정비·수리 등 작업을 위해 가동을 중지할 경우, 제3자의 재가동을 방지하도록 하는 잠금장치 또는 표지판을 설치하는 관리기법</p>
+</div></div>`;
+}
+
+function renderSafePatrol() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title" style="font-size:15pt;">작업장 순회점검표 [&nbsp;&nbsp;&nbsp;&nbsp;년&nbsp;&nbsp;&nbsp;&nbsp;월]</div>
+  <table class="doc-table mt10">
+    <tr>
+      <td class="label-cell" style="width:110px;">학교(부서)명</td><td>${S.학교명}</td>
+      <td class="label-cell" style="width:40px;" rowspan="2">결재</td>
+      <td class="center" style="width:70px;" rowspan="2">담당자<br><br>${S.담당자명}</td>
+      <td class="center" style="width:70px;" rowspan="2">행정실장<br><br></td>
+      <td class="center" style="width:70px;" rowspan="2">학교장<br><br></td>
+    </tr>
+    <tr><td class="label-cell">사&nbsp;&nbsp;업&nbsp;&nbsp;명</td><td>${S.계약명}</td></tr>
+  </table>
+  <p class="bold mt10">□ 안전점검 확인항목(예시)</p>
+  <p class="small mt5">❶ 기계·설비의 안전 점검 및 이상 유무의 확인 &nbsp; ❷ 작업복, 보호구, 방호장치의 점검과 착용·사용에 관한 교육·지도<br>
+  ❸ 작업장 정리·정돈 및 통로 확보에 대한 확인 &nbsp; ❹ 유해·위험요인 점검 및 개선에 관한 사항 확인<br>
+  ❺ 전기설비 절연·접지 상태 및 관리상태 확인 &nbsp; ❻ 안전보건관리계획서 이행사항 확인</p>
+  <p class="bold mt10">□ 안전점검 확인사항</p>
+  <table class="doc-table mt5">
+    <tr>
+      <th style="width:40px;">연번</th><th style="width:110px;">점검일</th><th style="width:50px;">항목</th>
+      <th style="width:35px;">①</th><th style="width:35px;">②</th><th style="width:35px;">③</th>
+      <th style="width:35px;">④</th><th style="width:35px;">⑤</th><th style="width:35px;">⑥</th>
+      <th>특이사항</th>
+    </tr>
+    ${[1,2,3,4,5].map(n => `
+    <tr>
+      <td class="center" rowspan="3">${n}</td>
+      <td rowspan="3" class="center" style="font-size:9pt;">${n}주 점검일<br>0000.00.00.</td>
+      <td class="center">양호</td>
+      <td></td><td></td><td></td><td></td><td></td><td></td>
+      <td rowspan="3" style="font-size:9pt;"></td>
+    </tr>
+    <tr><td class="center">불량</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td class="center">해당없음</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`).join('')}
+  </table>
+  <p class="small mt10">※ 학교(기관)의 구조, 시설, 설비 등의 여건에 따라 점검표 변경·활용 가능<br>
+  ☞ 산업안전보건법 제64조: 도급인 사업주는 작업장을 주 1회 이상 정기적으로 순회점검 실시하여야 함.</p>
+</div></div>`;
+}
+
+function renderSafeJoint() {
+  return `<div class="doc-wrap"><div class="doc-page">
+  <div class="doc-title" style="font-size:15pt;">작업장 합동 안전·보건점검표</div>
+  <table class="doc-table mt10">
+    <tr>
+      <td class="label-cell" style="width:90px;">학교(기관)명</td><td>${S.학교명}</td>
+      <td class="label-cell" style="width:40px;" rowspan="4">결재</td>
+      <td class="center" style="width:70px;" rowspan="4">담당자<br><br>${S.담당자명}</td>
+      <td class="center" style="width:70px;" rowspan="4">행정실장<br><br></td>
+      <td class="center" style="width:70px;" rowspan="4">학교장<br><br></td>
+    </tr>
+    <tr><td class="label-cell">사&nbsp;&nbsp;업&nbsp;&nbsp;명</td><td>${S.계약명}</td></tr>
+    <tr><td class="label-cell">업&nbsp;&nbsp;체&nbsp;&nbsp;명</td><td>${S.업체명s}</td></tr>
+    <tr><td class="label-cell">점검일자</td><td>2025-&nbsp;&nbsp;-&nbsp;&nbsp;</td></tr>
+  </table>
+  <p class="bold mt10">□ 안전점검 체크포인트</p>
+  <table class="doc-table mt5">
+    <tr>
+      <th style="width:40px;">번호</th><th>안전점검 사항</th>
+      <th style="width:55px;">양호</th><th style="width:55px;">불량</th><th style="width:65px;">해당없음</th>
+    </tr>
+    <tr><td class="center">1</td><td>기계·설비의 안전 점검 및 이상 유무의 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">2</td><td>작업복, 보호구, 방호장치의 점검과 착용·사용에 관한 교육·지도</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">3</td><td>작업장 정리·정돈 및 통로 확보에 대한 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">4</td><td>유해·위험요인 점검 및 개선에 관한 사항 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr><td class="center">5</td><td>전기설비 절연·접지 상태 및 관리상태 확인</td><td></td><td></td><td class="center">O</td></tr>
+    <tr><td class="center">6</td><td>안전보건관리계획서 이행사항 확인</td><td class="center">O</td><td></td><td></td></tr>
+    <tr>
+      <td colspan="5" style="height:60px; vertical-align:top; padding:6px;">
+        (안전점검사항 점검결과 조치 및 특이사항)
+      </td>
+    </tr>
+  </table>
+  <p class="bold mt10">□ 참석자 명단</p>
+  <table class="doc-table mt5">
+    <tr>
+      <th>소속</th><th>직위</th><th>성명(서명)</th>
+      <th>소속</th><th>직위</th><th>성명(서명)</th>
+    </tr>
+    <tr>
+      <td>${S.학교명}</td><td>${S.담당자직}</td><td>${S.담당자명}(서명)</td>
+      <td>${S.업체명s}</td><td>${S.안전담당직}</td><td>${S.안전담당명}(서명)</td>
+    </tr>
+    <tr>
+      <td>${S.학교명}</td><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;(서명)</td>
+      <td>${S.업체명s}</td><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;(서명)</td>
+    </tr>
+    <tr>
+      <td>${S.학교명}</td><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;(서명)</td>
+      <td>${S.업체명s}</td><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;(서명)</td>
+    </tr>
+  </table>
+</div></div>`;
+}
+
+// ===== 한 페이지 인쇄 =====
+// A4 인쇄 영역: 가로 794px, 세로 1123px (96dpi 기준), 여백 제외 후 약 1050px
+const PRINT_H = 1050;
+const PRINT_W = 756;
+
+window.addEventListener('beforeprint', () => {
+  document.querySelectorAll('.doc-page:not(.multi)').forEach(page => {
+    // 일시적으로 transform 제거 후 실제 크기 측정
+    page.style.transform = '';
+    const h = page.scrollHeight;
+    const w = page.scrollWidth;
+    const scale = Math.min(1, PRINT_H / h, PRINT_W / w);
+    if (scale < 1) {
+      page.style.transform = `scale(${scale})`;
+      page.style.transformOrigin = 'top left';
+      // transform은 레이아웃 공간을 줄이지 않으므로 여백 보정
+      page.style.marginBottom = `${(scale - 1) * h}px`;
+      page.style.marginRight = `${(scale - 1) * w}px`;
+    }
+  });
+});
+
+window.addEventListener('afterprint', () => {
+  document.querySelectorAll('.doc-page').forEach(page => {
+    page.style.transform = '';
+    page.style.transformOrigin = '';
+    page.style.marginBottom = '';
+    page.style.marginRight = '';
+  });
+});
+
+// ===== 한글(HWPX) 내보내기 =====
+// 현재 화면에 보이는 서식(직접 수정한 내용·체크 선택 포함)을 그대로 .hwpx 파일로 저장합니다.
+const HWPX = {
+  PAGE_W: 59528, PAGE_H: 84186,            // A4 (HWPUNIT, 1mm ≈ 283.46)
+  ML: 5669, MR: 5669, MT: 4252, MB: 4252,  // 좌우 20mm, 상하 15mm
+  HD: 2834, FT: 2834,
+  CELL_ML: 425, CELL_MR: 425, CELL_MT: 141, CELL_MB: 141,
+};
+HWPX.TEXT_W = HWPX.PAGE_W - HWPX.ML - HWPX.MR;
+
+function hxEsc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+class HwpxWriter {
+  constructor(pxScale) {
+    this.px = pxScale;            // 화면 px → HWPUNIT
+    this.chars = []; this.charMap = {};
+    this.paras = []; this.paraMap = {};
+    this.pid = 1; this.tid = 1;
+    this.seenBlocks = new WeakSet();
+  }
+  // 글자 모양 (기본 header의 charPr 0~6 뒤에 7번부터 추가)
+  charPr(height, bold) {
+    const key = height + '|' + (bold ? 1 : 0);
+    if (!(key in this.charMap)) { this.charMap[key] = 7 + this.chars.length; this.chars.push({ height, bold }); }
+    return this.charMap[key];
+  }
+  // 문단 모양 (기본 header의 paraPr 0~19 뒤에 20번부터 추가)
+  paraPr(align, indent, prev, next, line, left = 0) {
+    const key = [align, indent, prev, next, line, left].join('|');
+    if (!(key in this.paraMap)) { this.paraMap[key] = 20 + this.paras.length; this.paras.push({ align, indent, prev, next, line, left }); }
+    return this.paraMap[key];
+  }
+  charXml(id, c) {
+    const all = v => `hangul="${v}" latin="${v}" hanja="${v}" japanese="${v}" other="${v}" symbol="${v}" user="${v}"`;
+    return `<hh:charPr id="${id}" height="${c.height}" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2">` +
+      `<hh:fontRef ${all(1)}/><hh:ratio ${all(100)}/><hh:spacing ${all(0)}/><hh:relSz ${all(100)}/><hh:offset ${all(0)}/>` +
+      (c.bold ? '<hh:bold/>' : '') +
+      `<hh:underline type="NONE" shape="SOLID" color="#000000"/><hh:strikeout shape="NONE" color="#000000"/><hh:outline type="NONE"/><hh:shadow type="NONE" color="#C0C0C0" offsetX="10" offsetY="10"/></hh:charPr>`;
+  }
+  paraXml(id, p) {
+    const m = d => `<hh:margin><hc:intent value="${Math.round(p.indent / d)}" unit="HWPUNIT"/><hc:left value="${Math.round(p.left / d)}" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="${Math.round(p.prev / d)}" unit="HWPUNIT"/><hc:next value="${Math.round(p.next / d)}" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="${p.line}" unit="HWPUNIT"/>`;
+    return `<hh:paraPr id="${id}" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR">` +
+      `<hh:align horizontal="${p.align}" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/>` +
+      `<hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/>` +
+      `<hh:autoSpacing eAsianEng="0" eAsianNum="0"/>` +
+      `<hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar">${m(2)}</hp:case><hp:default>${m(1)}</hp:default></hp:switch>` +
+      `<hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr>`;
+  }
+  headerXml(tpl) {
+    const side = (t) => `<hh:leftBorder type="${t}" width="0.12 mm" color="#000000"/><hh:rightBorder type="${t}" width="0.12 mm" color="#000000"/><hh:topBorder type="${t}" width="0.12 mm" color="#000000"/><hh:bottomBorder type="${t}" width="0.12 mm" color="#000000"/>`;
+    const bf = (id, t, fill) => `<hh:borderFill id="${id}" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/>${side(t)}<hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/>` +
+      (fill ? `<hc:fillBrush><hc:winBrush faceColor="${fill}" hatchColor="#999999" alpha="0"/></hc:fillBrush>` : '') + `</hh:borderFill>`;
+    // 3: 실선 테두리, 4: 실선+연회색 음영(제목칸), 5: 테두리 없음
+    const fills = bf(3, 'SOLID') + bf(4, 'SOLID', '#F2F2F2') + bf(5, 'NONE');
+    const chars = this.chars.map((c, i) => this.charXml(7 + i, c)).join('');
+    const paras = this.paras.map((p, i) => this.paraXml(20 + i, p)).join('');
+    return tpl
+      .replace('<hh:borderFills itemCnt="2">', '<hh:borderFills itemCnt="5">')
+      .replace('</hh:borderFills>', fills + '</hh:borderFills>')
+      .replace('<hh:charProperties itemCnt="7">', `<hh:charProperties itemCnt="${7 + this.chars.length}">`)
+      .replace('</hh:charProperties>', chars + '</hh:charProperties>')
+      .replace('<hh:paraProperties itemCnt="20">', `<hh:paraProperties itemCnt="${20 + this.paras.length}">`)
+      .replace('</hh:paraProperties>', paras + '</hh:paraProperties>');
+  }
+
+  // ---- 화면 요소 → 문단 목록 ----
+  blocks(root, availW) {
+    const out = [];
+    let cur = null;
+    const self = this;
+
+    function blockOf(el) {
+      let e = el;
+      while (e && e !== root && /^inline/.test(getComputedStyle(e).display)) e = e.parentElement;
+      return e || root;
+    }
+    function paraStyle(block, firstLine) {
+      const cs = getComputedStyle(block);
+      const ta = cs.textAlign;
+      const align = ta === 'center' ? 'CENTER' : (ta === 'right' || ta === 'end') ? 'RIGHT' : 'JUSTIFY';
+      const fs = parseFloat(cs.fontSize) || 14;
+      const lhPx = parseFloat(cs.lineHeight);
+      let line = isNaN(lhPx) ? 160 : Math.round(lhPx / fs * 95 / 10) * 10;
+      line = Math.max(100, Math.min(300, line));
+      const isCell = /^T[DH]$/.test(block.tagName);
+      const ti = parseFloat(cs.textIndent) || 0;
+      const pad = isCell ? 0 : (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.marginLeft) || 0);
+      let indent = 0, prev = 0, left = 0;
+      if (ti < 0) { indent = Math.round(ti * self.px); left = Math.max(0, Math.round((pad + ti) * self.px)); }
+      else { left = Math.round(pad * self.px); if (firstLine) indent = Math.round(ti * self.px); }
+      if (firstLine && !isCell) prev = Math.round((parseFloat(cs.marginTop) || 0) * self.px);
+      return self.paraPr(align, indent, prev, 0, line, left);
+    }
+    function addText(text, el) {
+      if (!text) return;
+      const cs = getComputedStyle(el);
+      const height = Math.round(parseFloat(cs.fontSize) * 0.75 * 10) * 10;
+      const w = cs.fontWeight;
+      const bold = w === 'bold' || parseInt(w, 10) >= 600;
+      const cid = self.charPr(height, bold);
+      if (!cur) {
+        const block = blockOf(el);
+        const first = !self.seenBlocks.has(block);
+        self.seenBlocks.add(block);
+        cur = { runs: [], pp: paraStyle(block, first), cid };
+      }
+      const last = cur.runs[cur.runs.length - 1];
+      const prevText = cur.runs.map(r => r.t).join('');
+      if (text.startsWith(' ') && (prevText === '' || prevText.endsWith(' '))) text = text.replace(/^ +/, '');
+      if (!text) return;
+      if (last && last.c === cid) last.t += text; else cur.runs.push({ c: cid, t: text });
+    }
+    function emit(pp, runsXml) {
+      out.push(`<hp:p id="${self.pid++}" paraPrIDRef="${pp}" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0">${runsXml}</hp:p>`);
+    }
+    function flush() {
+      if (!cur) return;
+      const runs = cur.runs;
+      if (runs.length) {
+        runs[runs.length - 1].t = runs[runs.length - 1].t.replace(/ +$/, '');
+      }
+      const kept = runs.filter(r => r.t !== '');
+      if (kept.length) {
+        emit(cur.pp, kept.map(r => `<hp:run charPrIDRef="${r.c}"><hp:t>${hxEsc(r.t.replace(/ /g, ' '))}</hp:t></hp:run>`).join(''));
+      }
+      cur = null;
+    }
+    function blank(el) {
+      const cs = getComputedStyle(el);
+      const height = Math.round(parseFloat(cs.fontSize) * 0.75 * 10) * 10;
+      emit(paraStyle(blockOf(el), false), `<hp:run charPrIDRef="${self.charPr(height, false)}"><hp:t/></hp:run>`);
+    }
+    function walk(node) {
+      if (node.nodeType === 3) {
+        const parent = node.parentElement;
+        const ws = getComputedStyle(parent).whiteSpace;
+        if (ws.startsWith('pre') || ws === 'break-spaces') {
+          node.nodeValue.split('\n').forEach((seg, i) => {
+            if (i > 0) { if (cur) flush(); else blank(parent); }
+            addText(seg.replace(/\t/g, ' '), parent);
+          });
+        } else {
+          addText(node.nodeValue.replace(/[ \t\n\r\f]+/g, ' '), parent);
+        }
+        return;
+      }
+      if (node.nodeType !== 1) return;
+      const el = node;
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || el.classList.contains('no-print')) return;
+      if (el.tagName === 'BR') { if (cur) flush(); else blank(el.parentElement); return; }
+      if (el.tagName === 'TABLE') {
+        flush();
+        const pp = self.paraPr('LEFT', 0, Math.round((parseFloat(cs.marginTop) || 0) * self.px),
+                                         Math.round((parseFloat(cs.marginBottom) || 0) * self.px), 100);
+        emit(pp, `<hp:run charPrIDRef="0">${self.table(el, availW)}<hp:t/></hp:run>`);
+        return;
+      }
+      if (el.classList.contains('seal-box')) { addText(' (인)', el); return; }
+      if (el.classList.contains('cb-group')) {
+        flush();
+        [...el.querySelectorAll('.cb-opt')].filter(o => getComputedStyle(o).display !== 'none')
+          .forEach(o => { addText(o.textContent.trim(), o); flush(); });
+        return;
+      }
+      const isBlock = !/^inline/.test(cs.display);
+      if (isBlock) flush();
+      el.childNodes.forEach(walk);
+      if (isBlock) flush();
+    }
+
+    walk(root);
+    flush();
+    return out;
+  }
+
+  // ---- 표 ----
+  table(tbl, availW) {
+    const rows = [...tbl.rows].filter(tr => tr.closest('table') === tbl);
+    const nRows = rows.length;
+    const grid = rows.map(() => []);
+    const cells = [];
+    rows.forEach((tr, r) => {
+      let c = 0;
+      [...tr.cells].forEach(td => {
+        while (grid[r][c]) c++;
+        const cs = Math.max(1, td.colSpan || 1);
+        const rs = Math.max(1, Math.min(td.rowSpan || 1, nRows - r));
+        for (let i = 0; i < rs; i++) for (let j = 0; j < cs; j++) grid[r + i][c + j] = td;
+        cells.push({ td, r, c, cs, rs });
+        c += cs;
+      });
+    });
+    const nCols = Math.max(1, ...grid.map(g => g.length));
+    // 빈 칸 채우기 (한글 표는 모든 격자가 채워져 있어야 함)
+    for (let r = 0; r < nRows; r++) for (let c = 0; c < nCols; c++) {
+      if (!grid[r][c]) { grid[r][c] = 'empty'; cells.push({ td: null, r, c, cs: 1, rs: 1 }); }
+    }
+    // 열 너비: 화면에서 실제 너비 측정
+    const colW = new Array(nCols).fill(0);
+    cells.forEach(k => { if (k.td && k.cs === 1) colW[k.c] = Math.max(colW[k.c], k.td.getBoundingClientRect().width); });
+    cells.forEach(k => {
+      if (!k.td || k.cs === 1) return;
+      const span = colW.slice(k.c, k.c + k.cs);
+      const unknown = span.filter(v => !v).length;
+      if (unknown) {
+        const rest = Math.max(0, k.td.getBoundingClientRect().width - span.reduce((a, b) => a + b, 0));
+        for (let j = k.c; j < k.c + k.cs; j++) if (!colW[j]) colW[j] = rest / unknown || 1;
+      }
+    });
+    const avg = colW.filter(v => v).reduce((a, b) => a + b, 0) / (colW.filter(v => v).length || 1) || 50;
+    for (let j = 0; j < nCols; j++) if (!colW[j]) colW[j] = avg;
+    const tblPx = colW.reduce((a, b) => a + b, 0);
+    const colHU = colW.map(v => Math.round(v / tblPx * availW));
+    colHU[nCols - 1] += availW - colHU.reduce((a, b) => a + b, 0);
+    // 행 높이
+    const rowHU = rows.map(tr => Math.max(1000, Math.round(tr.getBoundingClientRect().height * this.px * 0.85)));
+
+    const tid = this.tid++;
+    const byRow = rows.map(() => []);
+    cells.forEach(k => byRow[k.r].push(k));
+    const trs = byRow.map(list => '<hp:tr>' + list.sort((a, b) => a.c - b.c).map(k => {
+      const w = colHU.slice(k.c, k.c + k.cs).reduce((a, b) => a + b, 0);
+      const h = rowHU.slice(k.r, k.r + k.rs).reduce((a, b) => a + b, 0);
+      let bf = 3, va = 'CENTER', paras = [];
+      if (k.td) {
+        const cs = getComputedStyle(k.td);
+        const bg = cs.backgroundColor;
+        const noBorder = cs.borderTopStyle === 'none' && cs.borderLeftStyle === 'none' && cs.borderRightStyle === 'none' && cs.borderBottomStyle === 'none';
+        const shaded = bg && !/rgba\(0, 0, 0, 0\)|transparent|rgb\(255, 255, 255\)/.test(bg);
+        bf = noBorder ? 5 : shaded ? 4 : 3;
+        va = cs.verticalAlign === 'top' ? 'TOP' : cs.verticalAlign === 'bottom' ? 'BOTTOM' : 'CENTER';
+        paras = this.blocks(k.td, Math.max(1000, w - HWPX.CELL_ML - HWPX.CELL_MR));
+      }
+      if (!paras.length) paras = [`<hp:p id="${this.pid++}" paraPrIDRef="0" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="${this.charPr(1000, false)}"><hp:t/></hp:run></hp:p>`];
+      return `<hp:tc name="" header="0" hasMargin="0" protect="0" editable="0" dirty="0" borderFillIDRef="${bf}">` +
+        `<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="${va}" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">${paras.join('')}</hp:subList>` +
+        `<hp:cellAddr colAddr="${k.c}" rowAddr="${k.r}"/><hp:cellSpan colSpan="${k.cs}" rowSpan="${k.rs}"/>` +
+        `<hp:cellSz width="${w}" height="${h}"/><hp:cellMargin left="${HWPX.CELL_ML}" right="${HWPX.CELL_MR}" top="${HWPX.CELL_MT}" bottom="${HWPX.CELL_MB}"/></hp:tc>`;
+    }).join('') + '</hp:tr>').join('');
+    const totalH = rowHU.reduce((a, b) => a + b, 0);
+    return `<hp:tbl id="${tid}" zOrder="${tid}" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="0" rowCnt="${nRows}" colCnt="${nCols}" cellSpacing="0" borderFillIDRef="5" noAdjust="0">` +
+      `<hp:sz width="${availW}" widthRelTo="ABSOLUTE" height="${totalH}" heightRelTo="ABSOLUTE" protect="0"/>` +
+      `<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>` +
+      `<hp:outMargin left="0" right="0" top="0" bottom="0"/>` +
+      `<hp:inMargin left="${HWPX.CELL_ML}" right="${HWPX.CELL_MR}" top="${HWPX.CELL_MT}" bottom="${HWPX.CELL_MB}"/>` +
+      trs + `</hp:tbl>`;
+  }
+}
+
+const HWPX_NS = 'xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hp10="http://www.hancom.co.kr/hwpml/2016/paragraph" xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hhs="http://www.hancom.co.kr/hwpml/2011/history" xmlns:hm="http://www.hancom.co.kr/hwpml/2011/master-page" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf/" xmlns:ooxmlchart="http://www.hancom.co.kr/hwpml/2016/ooxmlchart" xmlns:hwpunitchar="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0"';
+const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>';
+
+function hwpxSecPrRun() {
+  const nb = `<hp:noteSpacing betweenNotes="283" belowLine="567" aboveLine="850"/>`;
+  const pbf = t => `<hp:pageBorderFill type="${t}" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER"><hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill>`;
+  return `<hp:run charPrIDRef="0"><hp:secPr id="" textDirection="HORIZONTAL" spaceColumns="1134" tabStop="8000" tabStopVal="4000" tabStopUnit="HWPUNIT" outlineShapeIDRef="1" memoShapeIDRef="0" textVerticalWidthHead="0" masterPageCnt="0">` +
+    `<hp:grid lineGrid="0" charGrid="0" wonggojiFormat="0"/><hp:startNum pageStartsOn="BOTH" page="0" pic="0" tbl="0" equation="0"/>` +
+    `<hp:visibility hideFirstHeader="0" hideFirstFooter="0" hideFirstMasterPage="0" border="SHOW_ALL" fill="SHOW_ALL" hideFirstPageNum="0" hideFirstEmptyLine="0" showLineNumber="0"/>` +
+    `<hp:lineNumberShape restartType="0" countBy="0" distance="0" startNumber="0"/>` +
+    `<hp:pagePr landscape="WIDELY" width="${HWPX.PAGE_W}" height="${HWPX.PAGE_H}" gutterType="LEFT_ONLY"><hp:margin header="${HWPX.HD}" footer="${HWPX.FT}" gutter="0" left="${HWPX.ML}" right="${HWPX.MR}" top="${HWPX.MT}" bottom="${HWPX.MB}"/></hp:pagePr>` +
+    `<hp:footNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/><hp:noteLine length="-1" type="SOLID" width="0.12 mm" color="#000000"/>${nb}<hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="EACH_COLUMN" beneathText="0"/></hp:footNotePr>` +
+    `<hp:endNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/><hp:noteLine length="14692344" type="SOLID" width="0.12 mm" color="#000000"/><hp:noteSpacing betweenNotes="0" belowLine="567" aboveLine="850"/><hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="END_OF_DOCUMENT" beneathText="0"/></hp:endNotePr>` +
+    pbf('BOTH') + pbf('EVEN') + pbf('ODD') +
+    `</hp:secPr><hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="1" sameSz="1" sameGap="0"/></hp:ctrl></hp:run>`;
+}
+
+function buildHwpxFiles(pageEls, title) {
+  if (!Array.isArray(pageEls)) pageEls = [pageEls];
+  const pageEl = pageEls[0];
+  const contentPx = pageEl.clientWidth - parseFloat(getComputedStyle(pageEl).paddingLeft) - parseFloat(getComputedStyle(pageEl).paddingRight);
+  const w = new HwpxWriter(HWPX.TEXT_W / contentPx);
+  const paras = [];
+  pageEls.forEach((pg, i) => {
+    const ps = w.blocks(pg, HWPX.TEXT_W);
+    if (i > 0 && ps.length) ps[0] = ps[0].replace('pageBreak="0"', 'pageBreak="1"');
+    paras.push(...ps);
+  });
+  if (!paras.length) paras.push(`<hp:p id="0" paraPrIDRef="0" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="0"><hp:t/></hp:run></hp:p>`);
+  paras[0] = paras[0].replace(/^(<hp:p [^>]*>)/, '$1' + hwpxSecPrRun());
+  const section = `${XML_DECL}<hs:sec ${HWPX_NS}>${paras.join('')}</hs:sec>`;
+  const header = w.headerXml(document.getElementById('hwpx-header-tpl').textContent.trim());
+  const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  const hpf = `${XML_DECL}<opf:package ${HWPX_NS} version="" unique-identifier="" id=""><opf:metadata><opf:title>${hxEsc(title)}</opf:title><opf:language>ko</opf:language><opf:meta name="creator" content="text">용역 계약 빨리 끝내기</opf:meta><opf:meta name="subject" content="text"/><opf:meta name="description" content="text"/><opf:meta name="lastsaveby" content="text">용역 계약 빨리 끝내기</opf:meta><opf:meta name="CreatedDate" content="text">${now}</opf:meta><opf:meta name="ModifiedDate" content="text">${now}</opf:meta><opf:meta name="keyword" content="text"/></opf:metadata><opf:manifest><opf:item id="header" href="Contents/header.xml" media-type="application/xml"/><opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/><opf:item id="settings" href="settings.xml" media-type="application/xml"/></opf:manifest><opf:spine><opf:itemref idref="header" linear="yes"/><opf:itemref idref="section0" linear="yes"/></opf:spine></opf:package>`;
+  const prvText = pageEls.map(p => p.innerText || '').join('\n').replace(/\s+\n/g, '\n').slice(0, 1000);
+  return [
+    ['mimetype', 'application/hwp+zip', true],
+    ['version.xml', `${XML_DECL}<hv:HCFVersion xmlns:hv="http://www.hancom.co.kr/hwpml/2011/version" tagetApplication="WORDPROCESSOR" major="5" minor="1" micro="1" buildNumber="0" os="1" xmlVersion="1.5" application="Hancom Office Hangul" appVersion="13, 0, 0, 1408 WIN32LEWindows_10"/>`],
+    ['META-INF/container.xml', `${XML_DECL}<ocf:container xmlns:ocf="urn:oasis:names:tc:opendocument:xmlns:container" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf"><ocf:rootfiles><ocf:rootfile full-path="Contents/content.hpf" media-type="application/hwpml-package+xml"/><ocf:rootfile full-path="Preview/PrvText.txt" media-type="text/plain"/><ocf:rootfile full-path="META-INF/container.rdf" media-type="application/rdf+xml"/></ocf:rootfiles></ocf:container>`],
+    ['META-INF/container.rdf', `${XML_DECL}<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about=""><ns0:hasPart xmlns:ns0="http://www.hancom.co.kr/hwpml/2016/meta/pkg#" rdf:resource="Contents/header.xml"/></rdf:Description><rdf:Description rdf:about="Contents/header.xml"><rdf:type rdf:resource="http://www.hancom.co.kr/hwpml/2016/meta/pkg#HeaderFile"/></rdf:Description><rdf:Description rdf:about=""><ns0:hasPart xmlns:ns0="http://www.hancom.co.kr/hwpml/2016/meta/pkg#" rdf:resource="Contents/section0.xml"/></rdf:Description><rdf:Description rdf:about="Contents/section0.xml"><rdf:type rdf:resource="http://www.hancom.co.kr/hwpml/2016/meta/pkg#SectionFile"/></rdf:Description><rdf:Description rdf:about=""><rdf:type rdf:resource="http://www.hancom.co.kr/hwpml/2016/meta/pkg#Document"/></rdf:Description></rdf:RDF>`],
+    ['META-INF/manifest.xml', `${XML_DECL}<odf:manifest xmlns:odf="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"/>`],
+    ['Contents/content.hpf', hpf],
+    ['Contents/header.xml', header],
+    ['Contents/section0.xml', section],
+    ['settings.xml', `${XML_DECL}<ha:HWPApplicationSetting xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0"><ha:CaretPosition listIDRef="0" paraIDRef="0" pos="0"/></ha:HWPApplicationSetting>`],
+    ['Preview/PrvText.txt', prvText],
+  ];
+}
+
+// ---- 외부 라이브러리 없는 ZIP 작성기 ----
+const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_TABLE[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function deflateRaw(data) {
+  if (typeof CompressionStream === 'undefined') return null;
+  try {
+    const s = new Blob([data]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+    return new Uint8Array(await new Response(s).arrayBuffer());
+  } catch (e) { return null; }
+}
+async function makeZip(files) {
+  const enc = new TextEncoder();
+  const parts = [], central = [];
+  let offset = 0;
+  const d = new Date();
+  const dosTime = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  const dosDate = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  for (const [name, text, store] of files) {
+    const nameB = enc.encode(name);
+    const raw = enc.encode(text);
+    const crc = crc32(raw);
+    let body = raw, method = 0;
+    if (!store) { const z = await deflateRaw(raw); if (z) { body = z; method = 8; } }
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true);
+    lh.setUint16(8, method, true); lh.setUint16(10, dosTime, true); lh.setUint16(12, dosDate, true);
+    lh.setUint32(14, crc, true); lh.setUint32(18, body.length, true); lh.setUint32(22, raw.length, true);
+    lh.setUint16(26, nameB.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), nameB, body);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+    ch.setUint16(10, method, true); ch.setUint16(12, dosTime, true); ch.setUint16(14, dosDate, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, body.length, true); ch.setUint32(24, raw.length, true);
+    ch.setUint16(28, nameB.length, true); ch.setUint32(42, offset, true);
+    central.push(new Uint8Array(ch.buffer), nameB);
+    offset += 30 + nameB.length + body.length;
+  }
+  const cdSize = central.reduce((a, b) => a + b.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: 'application/hwp+zip' });
+}
+
+async function downloadHwpx() {
+  const pageEls = [...document.querySelectorAll('#content .doc-page')];
+  if (!pageEls.length) { alert('서식 화면에서 사용하세요.'); return; }
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  const title = document.getElementById('page-title').textContent.trim();
+  try {
+    const blob = await makeZip(buildHwpxFiles(pageEls, title));
+    const safe = s => String(s || '').replace(/[\\/:*?"<>|]/g, '').trim();
+    const fname = [safe(title), safe(D.업체명 || S.업체명s)].filter(Boolean).join('_') + '.hwpx';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fname;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  } catch (e) {
+    console.error(e);
+    alert('HWPX 저장 중 오류가 발생했습니다: ' + e.message);
+  }
+}
+
+// Init
+showPage('input');
+</script>
+</body>
+</html>
